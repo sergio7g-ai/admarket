@@ -399,6 +399,9 @@ select.edit{width:auto;text-align:left}
 (function(){
 const KEY='admark-demo-v5';
 let PHOTOS={};
+/* versão online: fotos sem fundo da biblioteca admarket (Drive) */
+const STATIC_PHOTOS={"arroz": "https://lh3.googleusercontent.com/d/18MT5sNn7qxb6MN17tE5hUXykc-uv7R5d", "azeite": "https://lh3.googleusercontent.com/d/1rrPAe2A1R-Uhy4qKHSzVD43_ZydyehCt", "bananas": "https://lh3.googleusercontent.com/d/11K8YfRVTDyAl-UPXnfoZsfayIiwAINou", "bolachas": "https://lh3.googleusercontent.com/d/1jxOI2fwJ4oN2T6VBilsQGW-V4XFYel9H", "cafe": "https://lh3.googleusercontent.com/d/1xSsU54L00dmbU067e5K5TdeYis9FUuI0", "detergente": "https://lh3.googleusercontent.com/d/1idC7lXbzqEh6M2WPifUBtIRBRBtqWQos", "esparguete": "https://lh3.googleusercontent.com/d/1S3ghR9ytqWZcetIlGEpIRCPYI1M2T963", "iogurte": "https://lh3.googleusercontent.com/d/1dSmCDToZ3SAOd-jDv_tXCmv1AIEuGXK3", "leite": "https://lh3.googleusercontent.com/d/1ApDUaYWo5iXOg4lLf4lOqAuHw2aPUZGZ"};
+if(!(window.claude&&window.claude.use))PHOTOS=Object.assign({},STATIC_PHOTOS);
 const MARK=document.querySelector('.logo-mark').src;
 const CATS=['Frescos','Mercearia','Bebidas','Higiene'];
 const COMP={continente:'Continente',pingo:'Pingo Doce',auchan:'Auchan'};
