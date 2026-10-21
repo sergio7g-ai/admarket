@@ -400,14 +400,14 @@ select.edit{width:auto;text-align:left}
 const KEY='admark-demo-v5';
 let PHOTOS={};
 /* versão online: fotos sem fundo da biblioteca admarket (Drive) */
-const STATIC_PHOTOS={"arroz": "https://lh3.googleusercontent.com/d/18MT5sNn7qxb6MN17tE5hUXykc-uv7R5d", "azeite": "https://lh3.googleusercontent.com/d/1rrPAe2A1R-Uhy4qKHSzVD43_ZydyehCt", "bananas": "https://lh3.googleusercontent.com/d/11K8YfRVTDyAl-UPXnfoZsfayIiwAINou", "bolachas": "https://lh3.googleusercontent.com/d/1jxOI2fwJ4oN2T6VBilsQGW-V4XFYel9H", "cafe": "https://lh3.googleusercontent.com/d/1xSsU54L00dmbU067e5K5TdeYis9FUuI0", "detergente": "https://lh3.googleusercontent.com/d/1idC7lXbzqEh6M2WPifUBtIRBRBtqWQos", "esparguete": "https://lh3.googleusercontent.com/d/1S3ghR9ytqWZcetIlGEpIRCPYI1M2T963", "iogurte": "https://lh3.googleusercontent.com/d/1dSmCDToZ3SAOd-jDv_tXCmv1AIEuGXK3", "leite": "https://lh3.googleusercontent.com/d/1ApDUaYWo5iXOg4lLf4lOqAuHw2aPUZGZ"};
+const STATIC_PHOTOS={"arroz": "https://lh3.googleusercontent.com/d/18MT5sNn7qxb6MN17tE5hUXykc-uv7R5d", "azeite": "https://lh3.googleusercontent.com/d/1rrPAe2A1R-Uhy4qKHSzVD43_ZydyehCt", "bananas": "https://lh3.googleusercontent.com/d/11K8YfRVTDyAl-UPXnfoZsfayIiwAINou", "bolachas": "https://lh3.googleusercontent.com/d/1jxOI2fwJ4oN2T6VBilsQGW-V4XFYel9H", "cafe": "https://lh3.googleusercontent.com/d/1xSsU54L00dmbU067e5K5TdeYis9FUuI0", "detergente": "https://lh3.googleusercontent.com/d/1idC7lXbzqEh6M2WPifUBtIRBRBtqWQos", "esparguete": "https://lh3.googleusercontent.com/d/1S3ghR9ytqWZcetIlGEpIRCPYI1M2T963", "iogurte": "https://lh3.googleusercontent.com/d/1dSmCDToZ3SAOd-jDv_tXCmv1AIEuGXK3", "leite": "https://lh3.googleusercontent.com/d/1ApDUaYWo5iXOg4lLf4lOqAuHw2aPUZGZ", "agua": "fotos/agua-luso.png", "atum": "fotos/atum-bom-petisco.png"};
 if(!(window.claude&&window.claude.use))PHOTOS=Object.assign({},STATIC_PHOTOS);
 const MARK=document.querySelector('.logo-mark').src;
 const CATS=['Frescos','Mercearia','Bebidas','Higiene'];
 const COMP={continente:'Continente',pingo:'Pingo Doce',auchan:'Auchan'};
 const PLAN_PRICE={'Básico':60,'Completo':100};
 const NEW_INVOICE={id:'FT 2026/1262',supplier:'Distribuidora Alimentar do Centro, Lda.',date:'21 out 2026',lines:[
-  {id:'atum',name:'Atum Bom Petisco',size:'Posta em óleo · 120 g',prod:'Atum Posta em Óleo',qty:'120 g',brand:'Bom Petisco',cat:'Mercearia',qty_:48,cost:1.20,comp:{continente:1.72,pingo:1.72,auchan:1.72},real:true,search:{kw:'atum',brand:'Bom Petisco',match:'posta oleo 120'}},
+  {id:'atum',name:'Atum Bom Petisco',size:'Posta ao natural · 120 g',prod:'Atum Posta ao Natural',qty:'120 g',brand:'Bom Petisco',cat:'Mercearia',qty_:48,cost:0.95,comp:{continente:1.31,pingo:2.04,auchan:2.03},real:true,search:{kw:'atum',brand:'Bom Petisco',match:'posta natural 120'}},
   {id:'esparguete',name:'Esparguete Milaneza',size:'500 g',prod:'Massa Esparguete',qty:'500 g',brand:'Milaneza',cat:'Mercearia',qty_:40,cost:0.62,comp:{continente:0.89,pingo:0.89,auchan:0.99},real:true,search:{kw:'esparguete',brand:'Milaneza',match:'massa esparguete milaneza 500'}},
   {id:'iogurte',name:'Iogurte Natural Mimosa',size:'8 × 120 g',prod:'Iogurte Natural',qty:'8 x 120 g',brand:'Mimosa',cat:'Frescos',qty_:30,cost:1.25,comp:{continente:1.89,pingo:1.89,auchan:1.89},real:true,search:{kw:'iogurte natural',brand:'Mimosa',match:'iogurte natural poupanca 960'}}
 ]};
