@@ -1322,7 +1322,7 @@ async function lerFaturaReal(file,info){
 
 function realReviewHTML(pe){
   const r=pe.res,c=r.cabecalho||{};
-  const how=r.metodo==='ia'?`lida com IA (${r.tokens} tokens)`:r.metodo==='modelo'?'lida com o modelo deste fornecedor · 0 tokens':'lida por regras · 0 tokens';
+  const how=r.metodo==='ia'?`lida com IA (${r.tokens} tokens)`:r.metodo==='ocr'?'lida com OCR grátis no servidor · 0 tokens':r.metodo==='modelo'?'lida com o modelo deste fornecedor · 0 tokens':'lida por regras · 0 tokens';
   return `<div class="card pad"><div class="card-h"><div class="reading">${pe.preview?`<img class="doc" src="${pe.preview}" alt="">`:`<span class="doc">${pe.kind}</span>`}<div>
     <span class="chip ${r.validada_qr?'c-green':'c-blue'}">${IC.check}${r.validada_qr?'Total confere com o QR':r.validada_qr===false?'Faltam linhas ou valores: confira com a fatura':'Confirme os valores'}</span>
     <h2 style="margin-top:8px">${esc(c.nifFornecedor?'Fornecedor NIF '+c.nifFornecedor:'Fornecedor')}</h2>

@@ -2,7 +2,8 @@
 // Entrada (JSON): { loja_id, origem: 'pdf'|'foto', texto?, qr?, imagem_b64?, media_type?, ficheiro? }
 //  - PDF: o browser extrai o texto (pdf.js) e o QR -> aqui só regras, 0 tokens.
 //  - Foto: o browser lê o QR (jsQR) e faz OCR (Tesseract) -> regras, 0 tokens.
-//    Só em último caso vai à IA (Haiku), com resposta mínima em JSON.
+//    Se faltar alguma linha: OCR.space no servidor (grátis, secret OCR_Key) -> regras.
+//    Só em último caso vai à IA (Haiku, se houver ANTHROPIC_API_KEY), com resposta mínima em JSON.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { lerQR, lerLinhas, bate } from './parser.js';
 
@@ -10,6 +11,29 @@ const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...CORS, 'Content-Type': 'application/json' } });
 
 const PROMPT = 'Fatura de fornecedor PT. Responde só JSON: {"nif":"","num":"","data":"AAAA-MM-DD","total":0,"l":[["ean","descrição",qtd,preço_unit,desc_pct,iva_pct]]}. Sem texto extra.';
+
+// OCR.space: grátis até 25 000 pedidos/mês, imagem até 1 MB
+async function ocrSpace(b64: string, mt: string): Promise<string | null> {
+  const key = Deno.env.get('OCR_Key') || Deno.env.get('OCR_KEY');
+  if (!key) return null;
+  const f = new FormData();
+  f.append('base64Image', `data:${mt};base64,${b64}`);
+  f.append('language', 'por'); f.append('isTable', 'true'); f.append('scale', 'true');
+  f.append('OCREngine', '2'); f.append('detectOrientation', 'true');
+  try {
+    const r = await fetch('https://api.ocr.space/parse/image', { method: 'POST', headers: { apikey: key }, body: f });
+    const j = await r.json();
+    if (j.IsErroredOnProcessing) return null;
+    return (j.ParsedResults || []).map((x: any) => x.ParsedText || '').join('\n').replace(/\t/g, ' ');
+  } catch (_) { return null; }
+}
+
+function tentar(texto: string, forn: any, qr: any) {
+  let r = forn?.modelo ? lerLinhas(texto, forn.modelo) : null;
+  if (!r || r.confianca < 0.8 || bate(r.linhas, qr) === false) r = lerLinhas(texto, null);
+  const ok = bate(r.linhas, qr);
+  return { r, bom: r.linhas.length > 0 && (ok === true || (r.confianca >= 0.8 && ok !== false)) };
+}
 
 async function haiku(b64: string, mt: string) {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
@@ -54,12 +78,17 @@ Deno.serve(async (req) => {
 
   let linhas: any[] = [], metodo = 'regras', tokens = 0, modelo = null, cab: any = qr || {}, parcial: any = null;
   if (b.texto) {
-    let r = forn?.modelo ? lerLinhas(b.texto, forn.modelo) : null;
-    if (!r || r.confianca < 0.8 || bate(r.linhas, qr) === false) r = lerLinhas(b.texto, null);
-    const ok = bate(r.linhas, qr);
-    if (r.linhas.length && (ok === true || (r.confianca >= 0.8 && ok !== false))) {
-      linhas = r.linhas; metodo = r.metodo; modelo = r.modelo;
-    } else if (r.linhas.length) parcial = r;
+    const { r, bom } = tentar(b.texto, forn, qr);
+    if (bom) { linhas = r.linhas; metodo = r.metodo; modelo = r.modelo; }
+    else if (r.linhas.length) parcial = r;
+  }
+  if (!linhas.length && b.imagem_b64) {
+    const t = await ocrSpace(b.imagem_b64, b.media_type || 'image/jpeg');
+    if (t) {
+      const { r, bom } = tentar(t, forn, qr);
+      if (bom) { linhas = r.linhas; metodo = 'ocr'; modelo = r.modelo; }
+      else if (r.linhas.length > (parcial?.linhas.length || 0)) parcial = r;
+    }
   }
   if (!linhas.length && b.imagem_b64) {
     let r = null;
