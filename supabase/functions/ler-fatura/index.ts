@@ -1,9 +1,9 @@
 // Edge function: ler-fatura
 // Entrada (JSON): { loja_id, origem: 'pdf'|'foto', texto?, qr?, imagem_b64?, media_type?, ficheiro? }
 //  - PDF: o browser extrai o texto (pdf.js) e o QR -> aqui só regras, 0 tokens.
-//  - Foto: o browser lê o QR (jsQR) e faz OCR (Tesseract) -> regras, 0 tokens.
-//    Se faltar alguma linha: OCR.space no servidor (grátis, secret OCR_Key) -> regras.
-//    Só em último caso vai à IA (Haiku, se houver ANTHROPIC_API_KEY), com resposta mínima em JSON.
+//  - Foto: o browser lê o QR (jsQR); a imagem (reduzida) vai à IA -> JSON mínimo, validado com o QR.
+//    IA: Gemini Flash (GEMINI_API_KEY, plano grátis) ou Claude Haiku (ANTHROPIC_API_KEY).
+//    Sem IA: OCR.space (OCR_Key) -> regras.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { lerQR, lerLinhas, bate } from './parser.js';
 
@@ -35,6 +35,36 @@ function tentar(texto: string, forn: any, qr: any) {
   return { r, bom: r.linhas.length > 0 && (ok === true || (r.confianca >= 0.8 && ok !== false)) };
 }
 
+function linhasIA(o: any) {
+  return (o.l || []).map((x: any[]) => {
+    const q = +x[2] || 1, p = +x[3], d = +x[4] || 0;
+    return { ean: x[0] ? String(x[0]).replace(/\D/g, '') || null : null, descricao: String(x[1] || '').trim(), quantidade: q, preco_unit: p,
+             desconto_pct: d, iva_pct: x[5] ?? null, total: Math.round(q * p * (1 - d / 100) * 100) / 100 };
+  }).filter((l: any) => l.descricao && l.preco_unit > 0);
+}
+function cabIA(o: any) { return { nifFornecedor: o.nif ? String(o.nif).replace(/\D/g, '') : null, numero: o.num, data: o.data, total: +o.total || null }; }
+
+async function gemini(b64: string, mt: string) {
+  const key = Deno.env.get('GEMINI_API_KEY');
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${key}`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ inline_data: { mime_type: mt, data: b64 } }, { text: PROMPT }] }],
+      generationConfig: { temperature: 0, responseMimeType: 'application/json', maxOutputTokens: 2500 },
+    }),
+  });
+  if (!r.ok) throw new Error('Gemini ' + r.status);
+  const j = await r.json();
+  const o = JSON.parse(j.candidates[0].content.parts.map((p: any) => p.text || '').join(''));
+  return { cab: cabIA(o), linhas: linhasIA(o), tokens: j.usageMetadata?.totalTokenCount || 0 };
+}
+
+async function ia(b64: string, mt: string) {
+  if (Deno.env.get('GEMINI_API_KEY')) { try { return await gemini(b64, mt); } catch (_) { /* tenta o seguinte */ } }
+  if (Deno.env.get('ANTHROPIC_API_KEY')) { try { return await haiku(b64, mt); } catch (_) { /* nada */ } }
+  return null;
+}
+
 async function haiku(b64: string, mt: string) {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -51,8 +81,7 @@ async function haiku(b64: string, mt: string) {
   const j = await r.json();
   const o = JSON.parse('{' + j.content[0].text);
   return {
-    cab: { nifFornecedor: o.nif, numero: o.num, data: o.data, total: o.total },
-    linhas: (o.l || []).map((x: any[]) => ({ ean: x[0] || null, descricao: x[1], quantidade: +x[2] || 1, preco_unit: +x[3], desconto_pct: +x[4] || 0, iva_pct: x[5] ?? null })),
+    cab: cabIA(o), linhas: linhasIA(o),
     tokens: (j.usage?.input_tokens || 0) + (j.usage?.output_tokens || 0),
   };
 }
@@ -77,26 +106,29 @@ Deno.serve(async (req) => {
   }
 
   let linhas: any[] = [], metodo = 'regras', tokens = 0, modelo = null, cab: any = qr || {}, parcial: any = null;
+  // PDF (ou texto já extraído): regras, 0 tokens
   if (b.texto) {
     const { r, bom } = tentar(b.texto, forn, qr);
     if (bom) { linhas = r.linhas; metodo = r.metodo; modelo = r.modelo; }
     else if (r.linhas.length) parcial = r;
   }
+  // foto: IA primeiro (lê tabelas tortas e mal iluminadas muito melhor que o OCR)
+  if (!linhas.length && b.imagem_b64) {
+    const r = await ia(b.imagem_b64, b.media_type || 'image/jpeg');
+    if (r && r.linhas.length) {
+      linhas = r.linhas; tokens = r.tokens; metodo = 'ia';
+      cab = { ...r.cab, ...(qr || {}) };          // o QR manda sempre
+      nif = cab.nifFornecedor;
+      if (nif && !forn) { const { data } = await sb.from('fornecedores').select('id,modelo').eq('loja_id', b.loja_id).eq('nif', nif).maybeSingle(); forn = data; }
+    }
+  }
+  // sem IA: OCR.space grátis -> regras
   if (!linhas.length && b.imagem_b64) {
     const t = await ocrSpace(b.imagem_b64, b.media_type || 'image/jpeg');
     if (t) {
       const { r, bom } = tentar(t, forn, qr);
       if (bom) { linhas = r.linhas; metodo = 'ocr'; modelo = r.modelo; }
       else if (r.linhas.length > (parcial?.linhas.length || 0)) parcial = r;
-    }
-  }
-  if (!linhas.length && b.imagem_b64) {
-    let r = null;
-    if (Deno.env.get('ANTHROPIC_API_KEY')) { try { r = await haiku(b.imagem_b64, b.media_type || 'image/jpeg'); } catch (_) { r = null; } }
-    if (r && r.linhas.length) {
-      linhas = r.linhas; tokens = r.tokens; metodo = 'ia';
-      cab = { ...r.cab, ...(qr || {}) };          // o QR manda sempre
-      nif = cab.nifFornecedor;
     }
   }
   // sem IA disponível: devolve o que as regras leram para o dono completar à mão

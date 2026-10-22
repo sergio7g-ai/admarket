@@ -1230,7 +1230,9 @@ async function sbInit(){
   try{await loadJS('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js')}catch(e){REAL.on=false;return}
   REAL.sb=supabase.createClient(SB_URL,SB_KEY);
   REAL.sb.auth.onAuthStateChange((_e,s)=>{const u=s?.user||null;if(u?.id!==REAL.user?.id){REAL.user=u;afterLogin()}});
-  const {data}=await REAL.sb.auth.getSession();REAL.user=data.session?.user||null;await afterLogin();
+  let {data}=await REAL.sb.auth.getSession();
+  if(!data.session){const a=await REAL.sb.auth.signInAnonymously();data={session:a.data?.session}}   // entra sozinho: conta deste aparelho
+  REAL.user=data.session?.user||null;await afterLogin();
 }
 async function afterLogin(){
   REAL.loja=null;REAL.faturas=[];
@@ -1249,9 +1251,13 @@ function realBoxHTML(){
   if(!REAL.on)return '';
   if(!REAL.sb)return `<p class="xs muted" style="margin-top:10px">A ligar ao servidor…</p>`;
   if(!REAL.user)return `<form class="real-login" id="real-login"><span class="small"><b>Faturas reais:</b> entre com o seu email para ler e guardar as suas faturas.</span><div class="opts"><input class="edit" type="email" id="real-email" placeholder="email@loja.pt" required autocomplete="email"><button class="btn primary" type="submit">Receber link de entrada</button></div></form>`;
+  if(REAL.user.is_anonymous)return `<form class="real-login" id="real-link"><span class="xs muted">${IC.check} As faturas ficam guardadas neste aparelho. Para as ver noutro telemóvel ou computador, associe o seu email:</span><div class="opts"><input class="edit" type="email" id="real-email" placeholder="email@loja.pt" required autocomplete="email"><button class="btn" type="submit">Associar email</button></div></form>`;
   return `<p class="xs muted" style="margin-top:10px">${IC.check} Ligado como ${esc(REAL.user.email)} · as faturas ficam guardadas no servidor · <button class="linkbtn" data-act="real-out">sair</button></p>`;
 }
 document.addEventListener('submit',async e=>{
+  if(e.target.id==='real-link'){e.preventDefault();const email=document.getElementById('real-email').value.trim();
+    const {error}=await REAL.sb.auth.updateUser({email},{emailRedirectTo:location.href.split('#')[0]});
+    toast(error?'Não foi possível: '+error.message:'Enviámos um email de confirmação para '+email+'.');return}
   if(e.target.id!=='real-login')return;e.preventDefault();
   const email=document.getElementById('real-email').value.trim();
   const {error}=await REAL.sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.href.split('#')[0]}});
@@ -1319,10 +1325,9 @@ async function lerFaturaReal(file,info){
       step('A procurar o código QR…');
       const big=await imgCanvas(file,2400);
       body.qr=await qrDe(big);
-      step('A ler o texto da foto (sem IA)…');
-      try{body.texto=await ocr(big,p=>step('A ler o texto da foto (sem IA)… '+p+'%'))}catch(_){}
-      const c=await imgCanvas(file,1400);           // só usada se as regras falharem: imagem pequena = menos tokens
-      body.imagem_b64=c.toDataURL('image/jpeg',.82).split(',')[1];body.media_type='image/jpeg';
+      if(!REAL.user){step('A ler o texto da foto…');try{body.texto=await ocr(big,p=>step('A ler o texto da foto… '+p+'%'))}catch(_){}}
+      const c=await imgCanvas(file,1600);           // a IA lê esta cópia reduzida: menos dados, menos tokens
+      body.imagem_b64=c.toDataURL('image/jpeg',.85).split(',')[1];body.media_type='image/jpeg';
     }
     if(!REAL.user||!REAL.loja){                    // sem sessão: lê a sério só neste aparelho, não guarda
       step('A ler as linhas (sem IA)…');
@@ -1337,7 +1342,7 @@ async function lerFaturaReal(file,info){
     const path=`${REAL.loja.id}/${Date.now()}-${file.name.replace(/[^\w.-]/g,'_')}`;
     const up=await REAL.sb.storage.from('faturas').upload(path,file,{contentType:file.type||'application/octet-stream'});
     if(!up.error)body.ficheiro=path;
-    step(isPdf?'A ler as linhas (sem IA)…':'A ler as linhas…');
+    step(isPdf?'A ler as linhas (sem IA)…':'A IA está a ler os produtos…');
     let {data,error}=await REAL.sb.functions.invoke('ler-fatura',{body});
     if(error){let m=error.message;try{m=(await error.context.json()).erro||m}catch(_){}
       throw new Error(m)}
