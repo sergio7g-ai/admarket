@@ -116,3 +116,31 @@ export function bate(linhas, qr) {
   const iva = qr.totalIva ?? linhas.reduce((s, l) => s + l.total * (l.iva_pct || 0) / 100, 0);
   return perto(base + iva, qr.total) || perto(base, qr.total);
 }
+
+// junta palavras soltas (com caixas x0,y0,x1,y1) em linhas seguindo a inclinação local: aguenta fotos tortas
+export function juntarPalavras(words) {
+  const W = words.filter(w => w.t && w.t.trim()).map(w => ({ t: w.t.trim(), x0: w.x0, x1: w.x1, cy: (w.y0 + w.y1) / 2, h: w.y1 - w.y0, used: 0 }));
+  if (!W.length) return '';
+  const medH = W.map(w => w.h).sort((a, b) => a - b)[W.length >> 1] || 20;
+  W.sort((a, b) => a.x0 - b.x0);
+  const out = [];
+  for (const w of W) {
+    if (w.used) continue; w.used = 1; const L = [w]; let cur = w, slope = 0;
+    for (;;) {
+      let best = null, bd = 1e9;
+      for (const v of W) {
+        if (v.used || v.x0 < cur.x1 - medH * 0.3) continue;
+        const dx = v.x0 - cur.x1; if (dx > medH * 25) continue;
+        const dy = Math.abs(v.cy - (cur.cy + slope * (v.x0 - cur.x0)));
+        if (dy > medH * 0.55 || v.h > medH * 2.2) continue;
+        const s = dx + dy * 8; if (s < bd) { bd = s; best = v; }
+      }
+      if (!best) break;
+      best.used = 1;
+      if (best.x0 - w.x0 > medH * 4) slope = Math.max(-0.1, Math.min(0.1, (best.cy - w.cy) / (best.x0 - w.x0)));
+      L.push(best); cur = best;
+    }
+    out.push(L);
+  }
+  return out.sort((a, b) => a[0].cy - b[0].cy).map(L => L.map(w => w.t).join(' ')).join('\n');
+}

@@ -5,27 +5,30 @@
 //    IA: Gemini Flash (GEMINI_API_KEY, plano grátis) ou Claude Haiku (ANTHROPIC_API_KEY).
 //    Sem IA: OCR.space (OCR_Key) -> regras.
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { lerQR, lerLinhas, bate } from './parser.js';
+import { lerQR, lerLinhas, bate, juntarPalavras } from './parser.js';
 
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type, apikey' };
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...CORS, 'Content-Type': 'application/json' } });
 
 const PROMPT = 'Fatura de fornecedor PT. Responde só JSON: {"nif":"","num":"","data":"AAAA-MM-DD","total":0,"l":[["ean","descrição",qtd,preço_unit,desc_pct,iva_pct]]}. Sem texto extra.';
 
-// OCR.space: grátis até 25 000 pedidos/mês, imagem até 1 MB
-async function ocrSpace(b64: string, mt: string): Promise<string | null> {
+// OCR.space: grátis até 25 000 pedidos/mês, imagem até 1 MB. Devolve textos candidatos:
+// linhas refeitas a partir das caixas das palavras (aguenta fotos tortas) e o texto simples.
+async function ocrSpace(b64: string, mt: string): Promise<string[]> {
   const key = Deno.env.get('OCR_Key') || Deno.env.get('OCR_KEY');
-  if (!key) return null;
+  if (!key) return [];
   const f = new FormData();
   f.append('base64Image', `data:${mt};base64,${b64}`);
-  f.append('language', 'por'); f.append('isTable', 'true'); f.append('scale', 'true');
+  f.append('language', 'por'); f.append('isOverlayRequired', 'true'); f.append('scale', 'true');
   f.append('OCREngine', '2'); f.append('detectOrientation', 'true');
   try {
     const r = await fetch('https://api.ocr.space/parse/image', { method: 'POST', headers: { apikey: key }, body: f });
     const j = await r.json();
-    if (j.IsErroredOnProcessing) return null;
-    return (j.ParsedResults || []).map((x: any) => x.ParsedText || '').join('\n').replace(/\t/g, ' ');
-  } catch (_) { return null; }
+    if (j.IsErroredOnProcessing || !j.ParsedResults) { console.log('ocr.space', JSON.stringify(j.ErrorMessage || j).slice(0, 300)); return []; }
+    const res = j.ParsedResults[0] || {};
+    const words = (res.TextOverlay?.Lines || []).flatMap((L: any) => L.Words.map((w: any) => ({ t: w.WordText, x0: w.Left, y0: w.Top, x1: w.Left + w.Width, y1: w.Top + w.Height })));
+    return [juntarPalavras(words), String(res.ParsedText || '').replace(/\t/g, ' ')].filter(Boolean);
+  } catch (e) { console.log('ocr.space erro', String(e)); return []; }
 }
 
 function tentar(texto: string, forn: any, qr: any) {
@@ -124,11 +127,10 @@ Deno.serve(async (req) => {
   }
   // sem IA: OCR.space grátis -> regras
   if (!linhas.length && b.imagem_b64) {
-    const t = await ocrSpace(b.imagem_b64, b.media_type || 'image/jpeg');
-    if (t) {
+    for (const t of await ocrSpace(b.imagem_b64, b.media_type || 'image/jpeg')) {
       const { r, bom } = tentar(t, forn, qr);
-      if (bom) { linhas = r.linhas; metodo = 'ocr'; modelo = r.modelo; }
-      else if (r.linhas.length > (parcial?.linhas.length || 0)) parcial = r;
+      if (bom) { linhas = r.linhas; metodo = 'ocr'; modelo = r.modelo; break; }
+      if (r.linhas.length > (parcial?.linhas.length || 0)) parcial = r;
     }
   }
   // sem IA disponível: devolve o que as regras leram para o dono completar à mão
