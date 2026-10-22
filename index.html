@@ -250,6 +250,7 @@ td.low{color:var(--green-ink);font-weight:700}
 .slot b{display:block;color:var(--blue-ink)}
 
 /* invoices */
+.real-local{display:grid;gap:4px;margin-top:14px;padding:14px;border-radius:12px;background:rgba(37,99,235,.06)}.real-local .real-login{justify-items:start;border:0;margin-top:6px;padding-top:0;max-width:none}.real-local .opts{justify-content:flex-start}
 .real-login{display:grid;gap:8px;justify-items:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line,#e5e7eb);width:100%;max-width:480px}.real-login .opts{flex-wrap:wrap;justify-content:center}.real-login input{min-width:220px}.linkbtn{background:none;border:0;padding:0;color:inherit;text-decoration:underline;cursor:pointer;font:inherit}
 .drop{border:1.5px dashed var(--line-2);border-radius:var(--r-2xl);padding:34px 20px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;background:var(--glass)}
 .drop.over{border-color:var(--blue-2);background:var(--blue-soft)}
@@ -716,7 +717,7 @@ function vInvoices(){
   else if(!pe){
     top=`<div class="drop" id="drop"><span class="big-ic">${IC.camera}</span><h2>Nova fatura de fornecedor</h2>
       <p class="muted small" style="max-width:48ch">Fotografe a fatura ou carregue o PDF. A IA lê os produtos e os preços de custo; o senhor só confirma.</p>
-      <div class="opts"><label class="btn primary" for="inv-photo">Fotografar</label><label class="btn" for="inv-pdf">Carregar PDF</label><button class="btn" data-act="sample">Usar exemplo</button></div>
+      <div class="opts"><label class="btn primary" for="inv-photo">Fotografar</label><label class="btn" for="inv-pdf">Carregar PDF</label><button class="btn" data-act="sample">Ver demonstração</button></div>
       <span class="xs muted">Ou arraste o ficheiro para aqui</span>${realBoxHTML()}</div>`;
   }else if(pe.stage==='real-review'){top=realReviewHTML(pe)
   }else if(pe.stage==='reading'){
@@ -1193,7 +1194,7 @@ function startInvoice(info){S.pending=Object.assign({stage:'reading'},info);S.ta
 function readInvoiceFile(file){
   if(!file)return;S.sheet=false;
   const isPdf=file.type==='application/pdf'||/\.pdf$/i.test(file.name);
-  if(REAL.user&&REAL.loja){if(isPdf)lerFaturaReal(file,{name:file.name,kind:'PDF',preview:null});else shrink(file,240).then(url=>lerFaturaReal(file,{name:file.name,kind:'Foto',preview:url})).catch(()=>lerFaturaReal(file,{name:file.name,kind:'Foto',preview:null}));return}
+  if(REAL.on){if(isPdf)lerFaturaReal(file,{name:file.name,kind:'PDF',preview:null});else shrink(file,240).then(url=>lerFaturaReal(file,{name:file.name,kind:'Foto',preview:url})).catch(()=>lerFaturaReal(file,{name:file.name,kind:'Foto',preview:null}));return}
   if(isPdf||!file.type.startsWith('image/')){startInvoice({name:file.name,kind:'PDF',preview:null});return}
   shrink(file,240).then(url=>startInvoice({name:file.name,kind:'Foto',preview:url})).catch(()=>startInvoice({name:file.name,kind:'Foto',preview:null}));
 }
@@ -1283,13 +1284,28 @@ function prepOCR(src){const W=src.width,H=src.height,c=document.createElement('c
   const r=Math.max(8,Math.round(Math.min(W,H)/40));
   for(let y=0;y<H;y++)for(let X=0;X<W;X++){const x0=Math.max(0,X-r),x1=Math.min(W,X+r+1),y0=Math.max(0,y-r),y1=Math.min(H,y+r+1),m=(g[y1*(W+1)+x1]-g[y0*(W+1)+x1]-g[y1*(W+1)+x0]+g[y0*(W+1)+x0])/((x1-x0)*(y1-y0)),i=(y*W+X)*4,v=d[i]<m*.88?0:255;d[i]=d[i+1]=d[i+2]=v}
   x.putImageData(im,0,0);return c}
-/* OCR no aparelho (Tesseract, português) — grátis, sem tokens */
+/* OCR no aparelho (Tesseract, português) — grátis, sem tokens.
+   Lê palavras soltas e junta-as em linhas seguindo a inclinação local, para aguentar fotos tortas. */
+function juntarPalavras(words){
+  const W=words.filter(w=>w.text.trim()).map(w=>({t:w.text.trim(),x0:w.bbox.x0,x1:w.bbox.x1,cy:(w.bbox.y0+w.bbox.y1)/2,h:w.bbox.y1-w.bbox.y0,used:0}));
+  if(!W.length)return '';const medH=W.map(w=>w.h).sort((a,b)=>a-b)[W.length>>1]||20;W.sort((a,b)=>a.x0-b.x0);const out=[];
+  for(const w of W){if(w.used)continue;w.used=1;const L=[w];let cur=w,slope=0;
+    for(;;){let best=null,bd=1e9;
+      for(const v of W){if(v.used||v.x0<cur.x1-medH*.3)continue;const dx=v.x0-cur.x1;if(dx>medH*25)continue;const dy=Math.abs(v.cy-(cur.cy+slope*(v.x0-cur.x0)));if(dy>medH*.55||v.h>medH*2.2)continue;const s=dx+dy*8;if(s<bd){bd=s;best=v}}
+      if(!best)break;best.used=1;if(best.x0-w.x0>medH*4)slope=Math.max(-.1,Math.min(.1,(best.cy-w.cy)/(best.x0-w.x0)));L.push(best);cur=best}
+    out.push(L)}
+  return out.sort((a,b)=>a[0].cy-b[0].cy).map(L=>L.map(w=>w.t).join(' ')).join('\n');
+}
 async function ocr(canvas,onp){
   await loadJS('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');
-  const g=prepOCR(canvas);
+  const k=Math.min(2.2,2400/Math.max(canvas.width,canvas.height)),c=document.createElement('canvas');   // ampliar fotos pequenas ajuda o OCR
+  c.width=Math.round(canvas.width*k);c.height=Math.round(canvas.height*k);const x=c.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(canvas,0,0,c.width,c.height);
   const w=await Tesseract.createWorker('por',1,{logger:m=>{if(m.status==='recognizing text'&&onp)onp(Math.round(m.progress*100))}});
-  await w.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'6'});
-  const {data}=await w.recognize(g);await w.terminate();return data.text;
+  await w.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'11'});
+  const P=await import('./supabase/functions/ler-fatura/parser.js');
+  let {data}=await w.recognize(c),txt=juntarPalavras(data.words),n=P.lerLinhas(txt,null).linhas.length;
+  if(n<2){const r2=await w.recognize(prepOCR(c)),t2=juntarPalavras(r2.data.words);if(P.lerLinhas(t2,null).linhas.length>n)txt=t2}   // 2.ª tentativa com a imagem limpa
+  await w.terminate();return txt;
 }
 function imgCanvas(file,max){return new Promise((ok,ko)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);ok(c)};im.onerror=ko;im.src=u})}
 
@@ -1297,7 +1313,7 @@ async function lerFaturaReal(file,info){
   S.pending=Object.assign({stage:'reading',real:true,msg:'A ler o ficheiro…'},info);S.tab='invoices';S.view='owner';render();scrollTo(0,0);
   const step=m=>{if(S.pending){S.pending.msg=m;render()}};
   try{
-    const isPdf=info.kind==='PDF',body={loja_id:REAL.loja.id,origem:isPdf?'pdf':'foto'};
+    const isPdf=info.kind==='PDF',body={loja_id:REAL.loja?.id,origem:isPdf?'pdf':'foto'};
     if(isPdf){const r=await pdfLer(file);body.texto=r.texto;body.qr=r.qr}
     else{
       step('A procurar o código QR…');
@@ -1307,6 +1323,15 @@ async function lerFaturaReal(file,info){
       try{body.texto=await ocr(big,p=>step('A ler o texto da foto (sem IA)… '+p+'%'))}catch(_){}
       const c=await imgCanvas(file,1400);           // só usada se as regras falharem: imagem pequena = menos tokens
       body.imagem_b64=c.toDataURL('image/jpeg',.82).split(',')[1];body.media_type='image/jpeg';
+    }
+    if(!REAL.user||!REAL.loja){                    // sem sessão: lê a sério só neste aparelho, não guarda
+      step('A ler as linhas (sem IA)…');
+      const P=await import('./supabase/functions/ler-fatura/parser.js');
+      const qr=P.lerQR(body.qr),r=P.lerLinhas(body.texto||'',null);
+      if(!r.linhas.length)throw new Error(isPdf?'não encontrei linhas de produtos neste PDF':'não consegui ler a foto. Tente com mais luz e a fatura direita');
+      S.pending=Object.assign({},S.pending,{stage:'real-review',res:{local:true,metodo:'regras',tokens:0,cabecalho:qr||{},validada_qr:P.bate(r.linhas,qr),
+        linhas:r.linhas.map(l=>({id:null,ean:l.ean,descricao:l.descricao,quantidade:l.quantidade,custo_unit:l.preco_unit*(1-l.desconto_pct/100),produto_id:null}))}});
+      render();return;
     }
     step('A guardar o original…');
     const path=`${REAL.loja.id}/${Date.now()}-${file.name.replace(/[^\w.-]/g,'_')}`;
@@ -1330,10 +1355,12 @@ function realReviewHTML(pe){
     <div class="tw"><table><thead><tr><th>Produto na fatura</th><th>Qtd.</th><th>Custo unit. (s/ IVA)</th><th>Produto</th></tr></thead><tbody>
     ${(r.linhas||[]).map((l,i)=>`<tr><td><b>${esc(l.descricao)}</b>${l.ean?`<span class="sub">${l.ean}</span>`:''}</td><td class="num">${+l.quantidade}</td>
       <td><input class="edit num" id="rl-cost-${i}" type="number" step="0.0001" min="0" value="${(+l.custo_unit).toFixed(4)}" aria-label="Custo de ${esc(l.descricao)}"> €</td>
-      <td>${l.produto_id?'<span class="chip c-green">Já conhecido</span>':'<span class="chip c-blue">Novo · vai ser criado</span>'}</td></tr>`).join('')}
+      <td>${l.produto_id?'<span class="chip c-green">Já conhecido</span>':r.local?'<span class="chip c-grey">Por guardar</span>':'<span class="chip c-blue">Novo · vai ser criado</span>'}</td></tr>`).join('')}
     </tbody></table></div>
-    <div class="acts" style="margin-top:16px"><button class="btn" data-act="real-cancel">Descartar</button><button class="btn green" data-act="real-confirm">Confirmar e guardar custos</button></div>
-    <p class="xs muted" style="margin-top:12px">Ao confirmar, os custos ficam guardados e a app aprende os nomes deste fornecedor. Da próxima vez lê sem perguntar.</p></div>`;
+    ${r.local?`<div class="acts" style="margin-top:16px"><button class="btn" data-act="real-cancel">Fechar</button></div>
+    <div class="real-local"><b class="small">Leitura feita só neste aparelho, nada foi guardado.</b><span class="xs muted">Para guardar estes custos, entre com o seu email e carregue a fatura outra vez.</span>${realBoxHTML()}</div>`
+    :`<div class="acts" style="margin-top:16px"><button class="btn" data-act="real-cancel">Descartar</button><button class="btn green" data-act="real-confirm">Confirmar e guardar custos</button></div>
+    <p class="xs muted" style="margin-top:12px">Ao confirmar, os custos ficam guardados e a app aprende os nomes deste fornecedor. Da próxima vez lê sem perguntar.</p>`}</div>`;
 }
 ACT['real-cancel']=async()=>{const id=S.pending?.res?.fatura_id;S.pending=null;render();if(id){await REAL.sb.from('faturas').delete().eq('id',id);await loadFaturas();render()}};
 ACT['real-confirm']=async()=>{
