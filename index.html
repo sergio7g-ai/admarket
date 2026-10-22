@@ -1277,6 +1277,15 @@ async function qrDe(canvas){
   const r=jsQR(d.data,d.width,d.height,{inversionAttempts:'dontInvert'});
   return r&&r.data.includes('A:')?r.data:null;
 }
+/* OCR no aparelho (Tesseract, português) — grátis, sem tokens */
+async function ocr(canvas,onp){
+  await loadJS('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');
+  const g=document.createElement('canvas');g.width=canvas.width;g.height=canvas.height;const x=g.getContext('2d');
+  x.filter='grayscale(1) contrast(1.4)';x.drawImage(canvas,0,0);
+  const w=await Tesseract.createWorker('por',1,{logger:m=>{if(m.status==='recognizing text'&&onp)onp(Math.round(m.progress*100))}});
+  await w.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'6'});
+  const {data}=await w.recognize(g);await w.terminate();return data.text;
+}
 function imgCanvas(file,max){return new Promise((ok,ko)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);ok(c)};im.onerror=ko;im.src=u})}
 
 async function lerFaturaReal(file,info){
@@ -1287,8 +1296,11 @@ async function lerFaturaReal(file,info){
     if(isPdf){const r=await pdfLer(file);body.texto=r.texto;body.qr=r.qr}
     else{
       step('A procurar o código QR…');
-      body.qr=await qrDe(await imgCanvas(file,2000));
-      const c=await imgCanvas(file,1400);           // imagem pequena = menos tokens se for preciso IA
+      const big=await imgCanvas(file,2400);
+      body.qr=await qrDe(big);
+      step('A ler o texto da foto (sem IA)…');
+      try{body.texto=await ocr(big,p=>step('A ler o texto da foto (sem IA)… '+p+'%'))}catch(_){}
+      const c=await imgCanvas(file,1400);           // só usada se as regras falharem: imagem pequena = menos tokens
       body.imagem_b64=c.toDataURL('image/jpeg',.82).split(',')[1];body.media_type='image/jpeg';
     }
     step('A guardar o original…');

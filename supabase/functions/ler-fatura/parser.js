@@ -27,7 +27,7 @@ const perto = (a, b) => Math.abs(a - b) <= Math.max(0.02, b * 0.006);
 
 // separa a linha em descrição + números finais
 function partir(linha) {
-  const t = linha.trim().split(/\s+/);
+  const t = linha.replace(/[€|\[\]]/g, ' ').replace(/(\d) ,(\d)/g, '$1,$2').trim().split(/\s+/);
   const nums = [];
   while (t.length && (NUM.test(t[t.length - 1].replace('%', '')) || /^(un|uni|kg|cx|lt|l|emb)$/i.test(t[t.length - 1]))) {
     const v = t.pop();
