@@ -27,7 +27,7 @@ const perto = (a, b) => Math.abs(a - b) <= Math.max(0.02, b * 0.006);
 
 // separa a linha em descrição + números finais
 function partir(linha) {
-  const t = linha.replace(/[€|\[\]]/g, ' ').replace(/(\d) ,(\d)/g, '$1,$2').trim().split(/\s+/)
+  const t = linha.replace(/[€|\[\]]/g, ' ').replace(/(\d)(un|uni|cx|emb)\b/gi, '$1 $2').replace(/^(\d{11,13}) (\d{1,2}) /, '$1$2 ').replace(/(\d) ,(\d)/g, '$1,$2').trim().split(/\s+/)
     .map(x => /^[OQDo]{1,2}$/.test(x) ? '0'
       : /^[\dOolI.,%]+$/.test(x) && /\d/.test(x) ? x.replace(/[Oo]/g, '0').replace(/[lI]/g, '1') : x); // erros típicos de OCR
   if (t.length) { const d = t[0].replace(/\D/g, ''); if (d.length >= 8 && d.length / t[0].length > 0.75) t[0] = d; }
@@ -59,10 +59,19 @@ function adivinhar(nums) {
         const d = v[id];
         if (d >= 0 && d < 100 && !IVAS.includes(d) && perto(q * p * (1 - d / 100), tot)) return pos(iq, ip, id, it, v);
       }
-      if (perto(q * p, tot)) return pos(iq, ip, -1, it, v);
+      if (perto(q * p, tot)) return pos(iq, ip, -2, it, v);   // sem coluna de desconto (ou desconto 0)
     }
   }
+  // a coluna do desconto não foi lida (OCR): deduz o desconto se der um valor redondo
+  for (let it = n - 1; it >= 2; it--) for (let iq = 0; iq < it; iq++) for (let ip = 0; ip < it; ip++) {
+    if (iq !== ip && descDeduzido(v[iq], v[ip], v[it]) != null) return pos(iq, ip, -2, it, v);
+  }
   return null;
+}
+function descDeduzido(q, p, tot) {
+  if (!(q > 0 && p > 0 && tot > 0) || tot > q * p + 0.02) return null;
+  const d = (1 - tot / (q * p)) * 100, r = Math.round(d * 2) / 2;
+  return r > 0 && r <= 50 && perto(q * p * (1 - r / 100), tot) ? r : null;
 }
 function pos(iq, ip, id, it, v) {
   const ii = v.findIndex((x, k) => ![iq, ip, id, it].includes(k) && IVAS.includes(x));
@@ -70,9 +79,15 @@ function pos(iq, ip, id, it, v) {
 }
 
 function linhaCom(m, p) {
-  const v = p.nums.map(num);
+  let v = p.nums.map(num);
+  if (v.length > m.n) {                       // números a mais no início fazem parte da descrição (ex.: "120 g")
+    const extra = p.nums.slice(0, v.length - m.n);
+    p = { ...p, desc: (p.desc + ' ' + extra.join(' ')).trim() }; v = v.slice(v.length - m.n);
+  }
   if (v.length !== m.n) return null;
-  const q = v[m.iq], pr = v[m.ip], d = m.id >= 0 ? v[m.id] : 0, tot = v[m.it];
+  const q = v[m.iq], pr = v[m.ip], tot = v[m.it];
+  let d = m.id >= 0 ? v[m.id] : 0;
+  if (m.id === -2 && !perto(q * pr, tot)) { d = descDeduzido(q, pr, tot); if (d == null) return null; }
   if (!(q > 0 && pr > 0) || !perto(q * pr * (1 - d / 100), tot)) return null;
   return { ean: p.ean, descricao: p.desc, quantidade: q, preco_unit: pr, desconto_pct: d,
            iva_pct: m.ii >= 0 ? v[m.ii] : null, total: tot };
