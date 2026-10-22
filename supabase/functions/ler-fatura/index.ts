@@ -56,12 +56,16 @@ Deno.serve(async (req) => {
   if (b.texto) {
     let r = forn?.modelo ? lerLinhas(b.texto, forn.modelo) : null;
     if (!r || r.confianca < 0.8 || bate(r.linhas, qr) === false) r = lerLinhas(b.texto, null);
-    if (r.linhas.length && r.confianca >= 0.8 && bate(r.linhas, qr) !== false) {
+    const ok = bate(r.linhas, qr);
+    if (r.linhas.length && (ok === true || (r.confianca >= 0.8 && ok !== false))) {
       linhas = r.linhas; metodo = r.metodo; modelo = r.modelo;
     }
   }
   if (!linhas.length && b.imagem_b64) {
-    const r = await haiku(b.imagem_b64, b.media_type || 'image/jpeg');
+    if (!Deno.env.get('ANTHROPIC_API_KEY')) return json({ erro: 'leitura de fotos ainda não ativada (falta a chave da IA)' }, 503);
+    let r;
+    try { r = await haiku(b.imagem_b64, b.media_type || 'image/jpeg'); }
+    catch (e) { return json({ erro: 'não consegui ler a foto: ' + (e as Error).message }, 502); }
     linhas = r.linhas; tokens = r.tokens; metodo = 'ia';
     cab = { ...r.cab, ...(qr || {}) };          // o QR manda sempre
     nif = cab.nifFornecedor;

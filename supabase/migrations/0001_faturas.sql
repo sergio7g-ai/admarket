@@ -51,6 +51,8 @@ create table public.aliases_produto (
   produto_id uuid not null references public.produtos(id) on delete cascade,
   primary key (fornecedor_id, texto)
 );
+create index on public.aliases_produto (loja_id);
+create index on public.aliases_produto (produto_id);
 
 create table public.faturas (
   id uuid primary key default gen_random_uuid(),
@@ -93,6 +95,8 @@ create or replace function public.minhas_lojas() returns setof uuid
 language sql stable security definer set search_path = '' as $$
   select loja_id from public.membros_loja where user_id = (select auth.uid())
 $$;
+revoke execute on function public.minhas_lojas() from anon, public;
+grant execute on function public.minhas_lojas() to authenticated;
 
 alter table public.lojas enable row level security;
 alter table public.membros_loja enable row level security;
@@ -125,7 +129,8 @@ begin
   insert into public.membros_loja(loja_id, user_id) values (v, auth.uid());
   return v;
 end $$;
-revoke execute on function public.criar_loja(text,text) from anon;
+revoke execute on function public.criar_loja(text,text) from anon, public;
+grant execute on function public.criar_loja(text,text) to authenticated;
 
 -- ---------- confirmar fatura: atualiza custos e aprende aliases ----------
 create or replace function public.confirmar_fatura(p_fatura uuid) returns void
@@ -146,10 +151,12 @@ begin
 
   update public.faturas set estado = 'confirmada' where id = p_fatura;
 end $$;
+revoke execute on function public.confirmar_fatura(uuid) from anon, public;
+grant execute on function public.confirmar_fatura(uuid) to authenticated;
 
 -- ---------- ficheiros das faturas (privados, uma pasta por loja) ----------
 insert into storage.buckets (id, name, public) values ('faturas', 'faturas', false)
 on conflict do nothing;
 create policy "faturas da loja" on storage.objects for all to authenticated
-  using (bucket_id = 'faturas' and (storage.foldername(name))[1]::uuid in (select public.minhas_lojas()))
-  with check (bucket_id = 'faturas' and (storage.foldername(name))[1]::uuid in (select public.minhas_lojas()));
+  using (bucket_id = 'faturas' and (storage.foldername(name))[1] in (select public.minhas_lojas()::text))
+  with check (bucket_id = 'faturas' and (storage.foldername(name))[1] in (select public.minhas_lojas()::text));
