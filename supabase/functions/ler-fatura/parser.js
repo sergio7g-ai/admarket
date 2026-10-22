@@ -104,7 +104,8 @@ export function lerLinhas(texto, modelo) {
     if (!top) return { linhas: [], modelo: null, metodo: 'regras', confianca: 0 };
     usado = JSON.parse(top[0]); metodo = 'regras';
   }
-  const linhas = partes.map(p => linhaCom(usado, p)).filter(Boolean);
+  // cada linha usa o padrão da maioria; se falhar (o OCR perdeu ou juntou colunas), tenta o seu próprio padrão
+  const linhas = partes.map(p => linhaCom(usado, p) || (() => { const g = adivinhar(p.nums); return g ? linhaCom(g, p) : null; })()).filter(Boolean);
   return { linhas, modelo: usado, metodo, confianca: partes.length ? linhas.length / partes.length : 0 };
 }
 
