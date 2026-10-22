@@ -28,7 +28,9 @@ const perto = (a, b) => Math.abs(a - b) <= Math.max(0.02, b * 0.006);
 // separa a linha em descrição + números finais
 function partir(linha) {
   const t = linha.replace(/[€|\[\]]/g, ' ').replace(/(\d) ,(\d)/g, '$1,$2').trim().split(/\s+/)
-    .map(x => /^[\dOolI.,%]+$/.test(x) && /[\d]|^[Oo]$/.test(x) ? x.replace(/[Oo]/g, '0').replace(/[lI]/g, '1') : x); // erros típicos de OCR
+    .map(x => /^[OQDo]{1,2}$/.test(x) ? '0'
+      : /^[\dOolI.,%]+$/.test(x) && /\d/.test(x) ? x.replace(/[Oo]/g, '0').replace(/[lI]/g, '1') : x); // erros típicos de OCR
+  if (t.length) { const d = t[0].replace(/\D/g, ''); if (d.length >= 8 && d.length / t[0].length > 0.75) t[0] = d; }
   const nums = [];
   while (t.length && (NUM.test(t[t.length - 1].replace('%', '')) || /^(un|uni|kg|cx|lt|l|emb)$/i.test(t[t.length - 1]))) {
     const v = t.pop();

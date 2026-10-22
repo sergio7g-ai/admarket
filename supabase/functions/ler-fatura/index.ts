@@ -1,7 +1,7 @@
 // Edge function: ler-fatura
 // Entrada (JSON): { loja_id, origem: 'pdf'|'foto', texto?, qr?, imagem_b64?, media_type?, ficheiro? }
 //  - PDF: o browser extrai o texto (pdf.js) e o QR -> aqui só regras, 0 tokens.
-//  - Foto: o browser tenta ler o QR (jsQR). Se o fornecedor tiver modelo e houver texto OCR, 0 tokens.
+//  - Foto: o browser lê o QR (jsQR) e faz OCR (Tesseract) -> regras, 0 tokens.
 //    Só em último caso vai à IA (Haiku), com resposta mínima em JSON.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { lerQR, lerLinhas, bate } from './parser.js';
@@ -52,25 +52,27 @@ Deno.serve(async (req) => {
     forn = data;
   }
 
-  let linhas: any[] = [], metodo = 'regras', tokens = 0, modelo = null, cab: any = qr || {};
+  let linhas: any[] = [], metodo = 'regras', tokens = 0, modelo = null, cab: any = qr || {}, parcial: any = null;
   if (b.texto) {
     let r = forn?.modelo ? lerLinhas(b.texto, forn.modelo) : null;
     if (!r || r.confianca < 0.8 || bate(r.linhas, qr) === false) r = lerLinhas(b.texto, null);
     const ok = bate(r.linhas, qr);
     if (r.linhas.length && (ok === true || (r.confianca >= 0.8 && ok !== false))) {
       linhas = r.linhas; metodo = r.metodo; modelo = r.modelo;
-    }
+    } else if (r.linhas.length) parcial = r;
   }
   if (!linhas.length && b.imagem_b64) {
-    if (!Deno.env.get('ANTHROPIC_API_KEY')) return json({ erro: 'leitura de fotos ainda não ativada (falta a chave da IA)' }, 503);
-    let r;
-    try { r = await haiku(b.imagem_b64, b.media_type || 'image/jpeg'); }
-    catch (e) { return json({ erro: 'não consegui ler a foto: ' + (e as Error).message }, 502); }
-    linhas = r.linhas; tokens = r.tokens; metodo = 'ia';
-    cab = { ...r.cab, ...(qr || {}) };          // o QR manda sempre
-    nif = cab.nifFornecedor;
+    let r = null;
+    if (Deno.env.get('ANTHROPIC_API_KEY')) { try { r = await haiku(b.imagem_b64, b.media_type || 'image/jpeg'); } catch (_) { r = null; } }
+    if (r && r.linhas.length) {
+      linhas = r.linhas; tokens = r.tokens; metodo = 'ia';
+      cab = { ...r.cab, ...(qr || {}) };          // o QR manda sempre
+      nif = cab.nifFornecedor;
+    }
   }
-  if (!linhas.length) return json({ erro: 'não consegui ler as linhas', precisa: b.imagem_b64 ? null : 'foto' }, 422);
+  // sem IA disponível: devolve o que as regras leram para o dono completar à mão
+  if (!linhas.length && parcial) { linhas = parcial.linhas; metodo = 'regras'; }
+  if (!linhas.length) return json({ erro: b.imagem_b64 ? 'não consegui ler a foto. Tente com mais luz, a fatura direita e a ocupar a imagem toda.' : 'não consegui ler as linhas deste PDF' }, 422);
 
   // fornecedor: criar ou guardar modelo
   if (nif && !forn) {
