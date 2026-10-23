@@ -127,7 +127,7 @@ export function lerLinhas(texto, modelo, qr = null) {
   // produtos com código de barras que não bateram: entram como "a confirmar" com a melhor estimativa
   const vistos = new Set(linhas.map(l => l.ean).filter(Boolean));
   for (const p of texto.split(/\r?\n/).map(partir)) {
-    if (!/^(\d{8}|\d{12,14})$/.test(p.ean || '') || vistos.has(p.ean) || p.desc.length < 3 || p.nums.length < 2) continue;
+    if (!/^(\d{8}|\d{12,14})$/.test(p.ean || '') || vistos.has(p.ean) || !/[a-zà-ú]{3,}/i.test(p.desc)) continue;
     const v = p.nums.map(num).filter(x => x != null);
     const q = v.find(x => Number.isInteger(x) && x > 0 && x < 1000) ?? 1;
     const pr = v.find(x => !Number.isInteger(x) && x > 0) ?? 0;
