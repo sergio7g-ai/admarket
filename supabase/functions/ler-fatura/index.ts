@@ -160,10 +160,10 @@ Deno.serve(async (req) => {
 
   const rows = linhas.map(l => ({
     fatura_id: fat.id, loja_id: b.loja_id, ean: l.ean, descricao: l.descricao, quantidade: l.quantidade,
-    preco_unit: l.preco_unit, desconto_pct: l.desconto_pct, iva_pct: l.iva_pct,
+    preco_unit: l.preco_unit, desconto_pct: l.desconto_pct, iva_pct: l.iva_pct, incerta: !!l.incerta,
     produto_id: (l.ean && mapE.get(l.ean)) || mapA.get(l.descricao.toLowerCase()) || null,
   }));
-  const { data: ins } = await sb.from('linhas_fatura').insert(rows).select('id,ean,descricao,quantidade,custo_unit,produto_id');
+  const { data: ins } = await sb.from('linhas_fatura').insert(rows).select('id,ean,descricao,quantidade,custo_unit,produto_id,incerta');
 
   return json({ fatura_id: fat.id, metodo, tokens, cabecalho: cab, linhas: ins, validada_qr: bate(linhas, qr) });
 });

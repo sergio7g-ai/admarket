@@ -27,7 +27,7 @@ const perto = (a, b) => Math.abs(a - b) <= Math.max(0.02, b * 0.006);
 
 // separa a linha em descrição + números finais
 function partir(linha) {
-  const t = linha.replace(/[€|\[\]]/g, ' ').replace(/(\d)(un|uni|cx|emb)\b/gi, '$1 $2').replace(/^(\d{11,13}) (\d{1,2}) /, '$1$2 ').replace(/(\d) ,(\d)/g, '$1,$2').trim().split(/\s+/)
+  const t = linha.replace(/[€|\[\]]/g, ' ').replace(/(\d)(un|uni|cx|emb)\b/gi, '$1 $2').replace(/^(\d{11,13}) (\d{1,2}) /, '$1$2 ').replace(/(\d) ,(\d)/g, '$1,$2').replace(/(\s\d{1,4}) (\d{2})\s*$/, '$1,$2').trim().split(/\s+/)
     .map(x => /^[OQDo]{1,2}$/.test(x) ? '0'
       : /^[\dOolI.,%]+$/.test(x) && /\d/.test(x) ? x.replace(/[Oo]/g, '0').replace(/[lI]/g, '1') : x); // erros típicos de OCR
   if (t.length) { const d = t[0].replace(/\D/g, ''); if (d.length >= 8 && d.length / t[0].length > 0.75) t[0] = d; }
@@ -57,8 +57,9 @@ function adivinhar(nums) {
   for (let it = n - 1; it >= 2; it--) {           // total da linha
     for (let iq = 0; iq < it; iq++) for (let ip = 0; ip < it; ip++) {
       if (iq === ip) continue;
-      const q = v[iq], p = v[ip], tot = v[it];
+      const q = v[iq], tot = v[it]; let p = v[ip];
       if (!(q > 0 && p > 0)) continue;
+      if (Number.isInteger(p) && p >= 100 && !perto(q * p, tot) && perto(q * p / 100, tot)) p = p / 100;   // vírgula perdida no OCR
       for (let id = 0; id < it; id++) {
         if (id === iq || id === ip) continue;
         const d = v[id];
@@ -90,7 +91,8 @@ function linhaCom(m, p) {
     p = { ...p, desc: (p.desc + ' ' + extra.join(' ')).trim() }; v = v.slice(v.length - m.n);
   }
   if (v.length !== m.n) return null;
-  const q = v[m.iq], pr = v[m.ip], tot = v[m.it];
+  const q = v[m.iq], tot = v[m.it]; let pr = v[m.ip];
+  if (Number.isInteger(pr) && pr >= 100 && perto(q * pr / 100, tot)) pr = pr / 100;
   let d = m.id >= 0 ? v[m.id] : 0;
   if (m.id === -2 && !perto(q * pr, tot)) { d = descDeduzido(q, pr, tot); if (d == null) return null; }
   if (!(q > 0 && pr > 0) || !perto(q * pr * (1 - d / 100), tot)) return null;
@@ -122,7 +124,17 @@ export function lerLinhas(texto, modelo, qr = null) {
       linhas.splice(res.indexOf(null) >= 0 ? res.slice(0, partes.indexOf(p)).filter(Boolean).length : linhas.length, 0,
         { ean: p.ean, descricao: p.desc, quantidade: q, preco_unit: pr, desconto_pct: d, iva_pct: null, total: falta });
   }
-  return { linhas, modelo: usado, metodo, confianca: partes.length ? linhas.length / partes.length : 0 };
+  // produtos com código de barras que não bateram: entram como "a confirmar" com a melhor estimativa
+  const vistos = new Set(linhas.map(l => l.ean).filter(Boolean));
+  for (const p of texto.split(/\r?\n/).map(partir)) {
+    if (!/^(\d{8}|\d{12,14})$/.test(p.ean || '') || vistos.has(p.ean) || p.desc.length < 3 || p.nums.length < 2) continue;
+    const v = p.nums.map(num).filter(x => x != null);
+    const q = v.find(x => Number.isInteger(x) && x > 0 && x < 1000) ?? 1;
+    const pr = v.find(x => !Number.isInteger(x) && x > 0) ?? 0;
+    linhas.push({ ean: p.ean, descricao: p.desc, quantidade: q, preco_unit: pr, desconto_pct: 0, iva_pct: null, total: Math.round(q * pr * 100) / 100, incerta: true });
+    vistos.add(p.ean);
+  }
+  return { linhas, modelo: usado, metodo, confianca: partes.length ? linhas.filter(l => !l.incerta).length / partes.length : 0 };
 }
 
 // valida com o QR: soma das linhas sem IVA + IVA ≈ total
