@@ -415,10 +415,22 @@ const NEW_INVOICE={id:'FT 2026/1262',supplier:'Distribuidora Alimentar do Centro
   {id:'iogurte',name:'Iogurte Natural Mimosa',size:'8 × 120 g',prod:'Iogurte Natural',qty:'8 x 120 g',brand:'Mimosa',cat:'Frescos',qty_:30,cost:1.25,comp:{continente:1.89,pingo:1.89,auchan:1.89},real:true,search:{kw:'iogurte natural',brand:'Mimosa',match:'iogurte natural poupanca 960'}}
 ]};
 function iso(m){return new Date(Date.now()+m*60000).toISOString()}
+let CATALOGO=null;   // produtos com preços reais da concorrência (fase 1); na fase 2 vem da recolha diária
+function catalogo(){if(!CATALOGO)CATALOGO=[...seed().products,...NEW_INVOICE.lines].map(p=>JSON.parse(JSON.stringify(p)));return CATALOGO}
+function associar(desc){
+  const d=norm(desc);let best=null,bs=0;
+  for(const c of catalogo()){
+    if(!d.includes(norm(c.brand).split(' ')[0]))continue;                       // a marca tem de aparecer
+    const pal=norm(c.prod+' '+c.name).split(/[^a-z0-9]+/).filter(w=>w.length>3);
+    const sc=pal.filter(w=>d.includes(w)).length;if(sc>bs){bs=sc;best=c}
+  }
+  return bs>=1?best:null;
+}
 function dayKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function seedTeste(){const s=seed();return Object.assign(s,{v:6,teste:true,products:[],invoices:[],promos:{},log:[],carousel:null,reel:null,pending:null})}
 function seed(){
   const t=new Date();t.setDate(t.getDate()+1);t.setHours(19,0,0,0);
-  return {v:5,view:'owner',tab:'home',feat:0,pick:{},menu:false,sheet:false,lastDone:null,clientsBase:135,
+  return {v:6,view:'owner',tab:'home',feat:0,pick:{},menu:false,sheet:false,lastDone:null,clientsBase:135,
     store:{name:'Mercado Sol Nascente',city:'Odivelas',logo:null,c1:'#1E40AF',c2:'#F97316',fb:'facebook.com/mercadosolnascente',ig:'@mercadosolnascente',gmb:'Mercado Sol Nascente, Odivelas',plan:'Completo'},
     margins:{Frescos:30,Mercearia:20,Bebidas:25,Higiene:25},
     products:[
@@ -450,7 +462,7 @@ function seed(){
 }
 let S=null;
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
-if(!S||S.v!==5)S=seed();
+if(!S||S.v!==6)S=seedTeste();
 S.menu=false;S.sheet=false;S.zoom=null;
 function save(){try{const c=Object.assign({},S);localStorage.setItem(KEY,JSON.stringify(c))}catch(e){}}
 
@@ -646,7 +658,7 @@ function renderChrome(){
       ${S.view==='owner'?`<button role="menuitem" data-act="tab" data-id="invoices">${IC.invoices.replace('<svg','<svg width="18" height="18"')}Faturas${S.tab==='invoices'?'<span class="tick">✓</span>':''}</button><button role="menuitem" data-act="tab" data-id="config"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Configuração da loja${S.tab==='config'?'<span class="tick">✓</span>':''}</button><hr>`:''}
       <button role="menuitem" data-act="view" data-id="owner">${IC.config.replace('<svg','<svg width="18" height="18"')}Vista da loja${S.view==='owner'?'<span class="tick">✓</span>':''}</button>
       <button role="menuitem" data-act="view" data-id="admin">${IC.stores.replace('<svg','<svg width="18" height="18"')}Painel admarket${S.view==='admin'?'<span class="tick">✓</span>':''}</button>
-      <hr><button role="menuitem" data-act="reset">${IC.reset.replace('<svg','<svg width="18" height="18"')}Repor demonstração</button></div>`:''}`;
+      <hr><button role="menuitem" data-act="modo-teste">${IC.reset.replace('<svg','<svg width="18" height="18"')}Modo teste (app vazia)</button><button role="menuitem" data-act="reset">${IC.reset.replace('<svg','<svg width="18" height="18"')}Repor demonstração</button></div>`:''}`;
   document.getElementById('layer').innerHTML=S.zoom?zoomHTML():S.sheet?`<div class="scrim" data-act="close"></div><div class="sheet" role="dialog" aria-label="Nova fatura">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:2px 4px 6px"><h2>Nova fatura</h2><button class="icon-btn" data-act="close" aria-label="Fechar">✕</button></div>
       <label class="opt" for="inv-photo"><span class="oi" style="background:var(--blue-soft);color:var(--blue-2)">${IC.camera}</span><span><b>Fotografar fatura</b><span>Abre a câmara do telemóvel</span></span></label>
@@ -776,7 +788,7 @@ function vPosts(){
 }
 
 function vConfig(){
-  const s=S.store,demo=prod('leite')||S.products[0];
+  const s=S.store,demo=prod('leite')||S.products[0]||catalogo().find(p=>p.id==='leite');
   return `<div class="ph"><div><h1>A sua loja</h1><p>Configurada uma vez, na adesão. Logótipo e cores entram em todos os posts; as margens limitam todas as sugestões.</p></div></div>
   <section class="grid2">
     <div class="card pad form"><h2>Identidade</h2>
@@ -1130,7 +1142,11 @@ function extraSlots(k){
 }
 
 const VIEWS={fotos:vFotos,home:vHome,invoices:vInvoices,compare:vCompare,promos:vPromos,posts:vPosts,config:vConfig,stores:vStores,log:vLog};
-function render(){renderChrome();document.getElementById('main').innerHTML=VIEWS[S.tab]();bindDrop();save()}
+function vVazio(){return `<div class="ph"><div><h1>${S.tab==='posts'?'Publicações':S.tab==='promos'?'Promoções':'Olá, '+esc(S.store.name)}</h1></div></div>
+  <div class="drop" style="cursor:default"><span class="big-ic">${IC.camera}</span><h2>Ainda não há produtos</h2>
+  <p class="muted small" style="max-width:46ch">Fotografe ou carregue uma fatura de fornecedor. A app lê os custos, compara com o Continente, o Pingo Doce e o Auchan e sugere logo as promoções e as publicações.</p>
+  <div class="opts"><button class="btn primary" data-act="tab" data-id="invoices">Ler uma fatura</button></div></div>`}
+function render(){renderChrome();document.getElementById('main').innerHTML=(!S.products.length&&['home','promos','posts'].includes(S.tab))?vVazio():VIEWS[S.tab]();bindDrop();save()}
 
 /* actions */
 const ACT={
@@ -1173,7 +1189,8 @@ const ACT={
   'photo-one'(id){ensureAll([allPhotoProducts().find(p=>p.id===id)]);render()},
   'inv-done'(){S.pending=null;S.tab='home';render();scrollTo(0,0)},
   'inv-new'(){S.pending=null;render()},
-  reset(){S=seed();render();scrollTo(0,0);toast('Demonstração reposta')}
+  reset(){S=seed();render();scrollTo(0,0);toast('Demonstração reposta')},
+  'modo-teste'(){S=seedTeste();S.tab='invoices';render();scrollTo(0,0);toast('Modo teste: app vazia. Leia uma fatura.')}
 };
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');
@@ -1384,7 +1401,17 @@ ACT['real-confirm']=async()=>{
     }
     const {error}=await REAL.sb.rpc('confirmar_fatura',{p_fatura:pe.res.fatura_id});if(error)throw error;
     log(`Guardou a fatura real ${pe.res.cabecalho?.numero||''} (${ls.length} produtos)`);
-    S.pending=null;await loadFaturas();render();scrollTo(0,0);toast('Custos guardados no servidor');
+    // os produtos com preços da concorrência conhecidos passam logo para as promoções
+    let novos=0;const sem=[];
+    ls.forEach((l,i)=>{const custo=parseFloat(document.getElementById('rl-cost-'+i)?.value)||+l.custo_unit,c=associar(l.descricao);
+      if(!c||!(custo>0)){sem.push(l.descricao);return}
+      const item=Object.assign({},c,{cost:r2(custo),qty_:+l.quantidade,inv:pe.res.cabecalho?.numero||'fatura'}),ex=prod(c.id);
+      if(ex)Object.assign(ex,item);else{S.products.push(item);novos++}delete S.promos[c.id]});
+    S.carousel=null;S.reel=null;
+    S.pending=null;await loadFaturas();
+    if(S.products.length){S.tab='promos';S.feat=0}
+    render();scrollTo(0,0);
+    toast(S.products.length?`${novos||ls.length-sem.length} produtos com promoção sugerida${sem.length?` · ${sem.length} sem preços da concorrência ainda`:''}`:'Custos guardados. Ainda sem preços da concorrência para estes produtos.');
   }catch(e){toast('Erro ao guardar: '+e.message)}finally{REAL.busy=null}
 };
 function realListHTML(){
