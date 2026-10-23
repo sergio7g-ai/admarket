@@ -250,6 +250,7 @@ td.low{color:var(--green-ink);font-weight:700}
 .slot b{display:block;color:var(--blue-ink)}
 
 /* invoices */
+.chip.c-warn{background:#fff4e5;color:#9a5b00}.edit.warn{border-color:#f0a020;background:#fffaf0}
 .real-local{display:grid;gap:4px;margin-top:14px;padding:14px;border-radius:12px;background:rgba(37,99,235,.06)}.real-local .real-login{justify-items:start;border:0;margin-top:6px;padding-top:0;max-width:none}.real-local .opts{justify-content:flex-start}
 .real-login{display:grid;gap:8px;justify-items:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line,#e5e7eb);width:100%;max-width:480px}.real-login .opts{flex-wrap:wrap;justify-content:center}.real-login input{min-width:220px}.linkbtn{background:none;border:0;padding:0;color:inherit;text-decoration:underline;cursor:pointer;font:inherit}
 .drop{border:1.5px dashed var(--line-2);border-radius:var(--r-2xl);padding:34px 20px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;background:var(--glass)}
@@ -718,7 +719,7 @@ function vInvoices(){
     top=`<div class="drop" id="drop"><span class="big-ic">${IC.camera}</span><h2>Nova fatura de fornecedor</h2>
       <p class="muted small" style="max-width:48ch">Fotografe a fatura ou carregue o PDF. A IA lê os produtos e os preços de custo; o senhor só confirma.</p>
       <div class="opts"><label class="btn primary" for="inv-photo">Fotografar</label><label class="btn" for="inv-pdf">Carregar PDF</label><button class="btn" data-act="sample">Ver demonstração</button></div>
-      <span class="xs muted">Ou arraste o ficheiro para aqui</span>${realBoxHTML()}</div>`;
+      <span class="xs muted">Dica: fatura inteira na foto, direita e com boa luz. Ou arraste o ficheiro para aqui</span>${realBoxHTML()}</div>`;
   }else if(pe.stage==='real-review'){top=realReviewHTML(pe)
   }else if(pe.stage==='reading'){
     top=`<div class="card pad"><div class="reading">${pe.preview?`<img class="doc" src="${pe.preview}" alt="">`:`<span class="doc">${pe.kind}</span>`}<div><b>${esc(pe.name)}</b><div class="reading small muted" style="margin-top:8px"><span class="spinner"></span>${pe.real?esc(pe.msg||''):'A IA está a ler produtos e preços…'}</div></div></div></div>`;
@@ -1234,10 +1235,12 @@ async function sbInit(){
   if(!data.session){const a=await REAL.sb.auth.signInAnonymously();data={session:a.data?.session}}   // entra sozinho: conta deste aparelho
   REAL.user=data.session?.user||null;await afterLogin();
 }
-async function afterLogin(){
+let _login=null;
+function afterLogin(){return _login||(_login=_afterLogin().finally(()=>{_login=null}))}   // evita criar a loja duas vezes
+async function _afterLogin(){
   REAL.loja=null;REAL.faturas=[];
   if(REAL.user){
-    let {data:l}=await REAL.sb.from('lojas').select('id,nome').limit(1);
+    let {data:l}=await REAL.sb.from('lojas').select('id,nome').order('criado_em').limit(1);
     if(!l?.length){const {data:id}=await REAL.sb.rpc('criar_loja',{p_nome:S.store.name});l=[{id,nome:S.store.name}]}
     REAL.loja=l[0];await loadFaturas();
   }
@@ -1354,13 +1357,13 @@ function realReviewHTML(pe){
   const r=pe.res,c=r.cabecalho||{};
   const how=r.metodo==='ia'?`lida com IA (${r.tokens} tokens)`:r.metodo==='ocr'?'lida com OCR grátis no servidor · 0 tokens':r.metodo==='modelo'?'lida com o modelo deste fornecedor · 0 tokens':'lida por regras · 0 tokens';
   return `<div class="card pad"><div class="card-h"><div class="reading">${pe.preview?`<img class="doc" src="${pe.preview}" alt="">`:`<span class="doc">${pe.kind}</span>`}<div>
-    <span class="chip ${r.validada_qr?'c-green':'c-blue'}">${IC.check}${r.validada_qr?'Total confere com o QR':r.validada_qr===false?'Faltam linhas ou valores: confira com a fatura':'Confirme os valores'}</span>
+    <span class="chip ${r.validada_qr?'c-green':'c-blue'}">${IC.check}${r.validada_qr?'Total confere com o QR':r.validada_qr===false?'Faltam linhas ou valores: confira com a fatura':'Confirme os valores'}</span>${(r.linhas||[]).some(l=>l.incerta)?` <span class="chip c-warn">${(r.linhas||[]).filter(l=>l.incerta).length} por confirmar</span>`:''}
     <h2 style="margin-top:8px">${esc(c.nifFornecedor?'Fornecedor NIF '+c.nifFornecedor:'Fornecedor')}</h2>
     <span class="xs muted">${esc(c.numero||'')} ${c.data?'· '+c.data:''} ${c.total?'· total '+eur(c.total):''} · ${how}</span></div></div></div>
     <div class="tw"><table><thead><tr><th>Produto na fatura</th><th>Qtd.</th><th>Custo unit. (s/ IVA)</th><th>Produto</th></tr></thead><tbody>
     ${(r.linhas||[]).map((l,i)=>`<tr><td><b>${esc(l.descricao)}</b>${l.ean?`<span class="sub">${l.ean}</span>`:''}</td><td class="num">${+l.quantidade}</td>
-      <td><input class="edit num" id="rl-cost-${i}" type="number" step="0.0001" min="0" value="${(+l.custo_unit).toFixed(4)}" aria-label="Custo de ${esc(l.descricao)}"> €</td>
-      <td>${l.produto_id?'<span class="chip c-green">Já conhecido</span>':r.local?'<span class="chip c-grey">Por guardar</span>':'<span class="chip c-blue">Novo · vai ser criado</span>'}</td></tr>`).join('')}
+      <td><input class="edit num${l.incerta?' warn':''}" id="rl-cost-${i}" type="number" step="0.0001" min="0" value="${(+l.custo_unit).toFixed(4)}" aria-label="Custo de ${esc(l.descricao)}"> €</td>
+      <td>${l.incerta?'<span class="chip c-warn">Confirme o custo</span>':l.produto_id?'<span class="chip c-green">Já conhecido</span>':r.local?'<span class="chip c-grey">Por guardar</span>':'<span class="chip c-blue">Novo · vai ser criado</span>'}</td></tr>`).join('')}
     </tbody></table></div>
     ${r.local?`<div class="acts" style="margin-top:16px"><button class="btn" data-act="real-cancel">Fechar</button></div>
     <div class="real-local"><b class="small">Leitura feita só neste aparelho, nada foi guardado.</b><span class="xs muted">Para guardar estes custos, entre com o seu email e carregue a fatura outra vez.</span>${realBoxHTML()}</div>`
