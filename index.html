@@ -1350,7 +1350,8 @@ async function lerFaturaReal(file,info){
     if(error){let m=error.message;try{m=(await error.context.json()).erro||m}catch(_){}
       throw new Error(m)}
     S.pending=Object.assign({},S.pending,{stage:'real-review',res:data});render();
-  }catch(e){S.pending=null;render();toast('Não consegui ler esta fatura: '+e.message)}
+  }catch(e){S.pending=null;render();toast('Não consegui ler esta fatura: '+e.message);
+    try{REAL.sb&&REAL.user&&REAL.sb.from('erros_app').insert({msg:String(e.message||e).slice(0,500),contexto:{tipo:info.kind,ficheiro:info.name,ua:navigator.userAgent.slice(0,120)}}).then(()=>{})}catch(_){}}   // para diagnóstico
 }
 
 function realReviewHTML(pe){
