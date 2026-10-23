@@ -32,8 +32,8 @@ async function ocrSpace(b64: string, mt: string): Promise<string[]> {
 }
 
 function tentar(texto: string, forn: any, qr: any) {
-  let r = forn?.modelo ? lerLinhas(texto, forn.modelo) : null;
-  if (!r || r.confianca < 0.8 || bate(r.linhas, qr) === false) r = lerLinhas(texto, null);
+  let r = forn?.modelo ? lerLinhas(texto, forn.modelo, qr) : null;
+  if (!r || r.confianca < 0.8 || bate(r.linhas, qr) === false) r = lerLinhas(texto, null, qr);
   const ok = bate(r.linhas, qr);
   return { r, bom: r.linhas.length > 0 && (ok === true || (r.confianca >= 0.8 && ok !== false)) };
 }

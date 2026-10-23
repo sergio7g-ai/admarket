@@ -31,10 +31,15 @@ function partir(linha) {
     .map(x => /^[OQDo]{1,2}$/.test(x) ? '0'
       : /^[\dOolI.,%]+$/.test(x) && /\d/.test(x) ? x.replace(/[Oo]/g, '0').replace(/[lI]/g, '1') : x); // erros típicos de OCR
   if (t.length) { const d = t[0].replace(/\D/g, ''); if (d.length >= 8 && d.length / t[0].length > 0.75) t[0] = d; }
-  const nums = [];
-  while (t.length && (NUM.test(t[t.length - 1].replace('%', '')) || /^(un|uni|kg|cx|lt|l|emb)$/i.test(t[t.length - 1]))) {
-    const v = t.pop();
-    if (!/^[a-z]+$/i.test(v)) nums.unshift(v);
+  // números do fim da linha; ignora lixo curto do OCR no meio (ex.: "un" lido como "มก", "23-")
+  const nums = []; let lixo = 0;
+  while (t.length) {
+    const x = t[t.length - 1], limpo = x.replace(/^[-–.:]+|[-–.:]+$/g, '').replace('%', '');
+    if (NUM.test(limpo)) { t.pop(); nums.unshift(limpo); lixo = 0; continue; }
+    const unidade = /^(un|uni|kg|cx|lt|l|emb|u)$/i.test(x);
+    const curto = !/[a-zà-ú]{3,}/i.test(x) && !/\d/.test(x) && x.length <= 4;   // sem letras latinas reais nem dígitos
+    if ((unidade || curto) && lixo < 2 && nums.length) { t.pop(); lixo++; continue; }
+    break;
   }
   let ean = null;
   if (t.length && /^\d{8,14}$/.test(t[0])) ean = t.shift();
@@ -94,7 +99,7 @@ function linhaCom(m, p) {
 }
 
 // texto -> { linhas, modelo, metodo, confianca }
-export function lerLinhas(texto, modelo) {
+export function lerLinhas(texto, modelo, qr = null) {
   const partes = texto.split(/\r?\n/).map(partir).filter(p => p.desc.length > 2 && p.nums.length >= 3);
   let usado = modelo, metodo = 'modelo';
   if (!usado) {
@@ -105,7 +110,18 @@ export function lerLinhas(texto, modelo) {
     usado = JSON.parse(top[0]); metodo = 'regras';
   }
   // cada linha usa o padrão da maioria; se falhar (o OCR perdeu ou juntou colunas), tenta o seu próprio padrão
-  const linhas = partes.map(p => linhaCom(usado, p) || (() => { const g = adivinhar(p.nums); return g ? linhaCom(g, p) : null; })()).filter(Boolean);
+  const res = partes.map(p => linhaCom(usado, p) || (() => { const g = adivinhar(p.nums); return g ? linhaCom(g, p) : null; })());
+  const linhas = res.filter(Boolean);
+  // se só falhou uma linha e há QR, o total em falta é (total sem IVA do QR − soma das outras)
+  const falhas = partes.filter((p, i) => !res[i] && /^\d{8,14}$/.test(p.ean || ''));
+  if (qr && qr.total && qr.totalIva != null && falhas.length === 1 && bate(linhas, qr) === false) {
+    const p = falhas[0], v = p.nums.map(num), q = v[0], pr = v[1];
+    const falta = Math.round((qr.total - qr.totalIva - linhas.reduce((s, l) => s + l.total, 0)) * 100) / 100;
+    const d = perto(q * pr, falta) ? 0 : descDeduzido(q, pr, falta);
+    if (q > 0 && q === Math.round(q) && pr > 0 && d != null)
+      linhas.splice(res.indexOf(null) >= 0 ? res.slice(0, partes.indexOf(p)).filter(Boolean).length : linhas.length, 0,
+        { ean: p.ean, descricao: p.desc, quantidade: q, preco_unit: pr, desconto_pct: d, iva_pct: null, total: falta });
+  }
   return { linhas, modelo: usado, metodo, confianca: partes.length ? linhas.length / partes.length : 0 };
 }
 
