@@ -108,11 +108,10 @@ export function lerLinhas(texto, modelo, qr = null) {
     const votos = {};
     for (const p of partes) { const g = adivinhar(p.nums); if (g) { const k = JSON.stringify(g); votos[k] = (votos[k] || 0) + 1; } }
     const top = Object.entries(votos).sort((a, b) => b[1] - a[1])[0];
-    if (!top) return { linhas: [], modelo: null, metodo: 'regras', confianca: 0 };
-    usado = JSON.parse(top[0]); metodo = 'regras';
+    usado = top ? JSON.parse(top[0]) : null; metodo = 'regras';
   }
   // cada linha usa o padrão da maioria; se falhar (o OCR perdeu ou juntou colunas), tenta o seu próprio padrão
-  const res = partes.map(p => linhaCom(usado, p) || (() => { const g = adivinhar(p.nums); return g ? linhaCom(g, p) : null; })());
+  const res = partes.map(p => (usado && linhaCom(usado, p)) || (() => { const g = adivinhar(p.nums); return g ? linhaCom(g, p) : null; })());
   const linhas = res.filter(Boolean);
   // se só falhou uma linha e há QR, o total em falta é (total sem IVA do QR − soma das outras)
   const falhas = partes.filter((p, i) => !res[i] && /^\d{8,14}$/.test(p.ean || ''));
