@@ -66,7 +66,8 @@ async function pesquisa(token: string, q: any) {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   // limpa espaços, aspas ou "Bearer" que fiquem colados ao colar a chave
-  const token = (Deno.env.get('APIFY_TOKEN') || Deno.env.get('Apify') || '').trim().replace(/^bearer\s+/i, '').replace(/^['"]|['"]$/g, '').trim();
+  const bruto = (Deno.env.get('APIFY_TOKEN') || Deno.env.get('Apify') || '').trim();
+  const token = (bruto.match(/apify_api_[A-Za-z0-9]+/)?.[0]) || bruto.replace(/^bearer\s+/i, '').replace(/^['"]|['"]$/g, '').trim();
   const json = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
   if (!token) return json({ ok: false, erro: 'falta a chave do Apify nos Secrets' }, 500);
   const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
@@ -99,5 +100,5 @@ Deno.serve(async (req) => {
   await sb.from('registo_pesquisas').insert({ pesquisados: qs.length, encontrados, falhas, custo_usd: custo, detalhe: { erros: erros.slice(0, 20), pedido: !!body.chaves } });
   // diagnóstico sem revelar a chave: só o formato
   const chave_ok = /^apify_api_[A-Za-z0-9]{20,}$/.test(token);
-  return json({ ok: falhas < qs.length, pesquisados: qs.length, encontrados, falhas, custo_usd: custo, erros: erros.slice(0, 5), chave_formato_ok: chave_ok, chave_tamanho: token.length });
+  return json({ ok: falhas < qs.length, pesquisados: qs.length, encontrados, falhas, custo_usd: custo, erros: erros.slice(0, 5), chave_formato_ok: chave_ok, chave_tamanho: token.length, tem_prefixo: bruto.includes('apify_api_'), tem_espacos: /\s/.test(bruto), tem_igual: bruto.includes('=') });
 });
