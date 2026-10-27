@@ -250,6 +250,8 @@ td.low{color:var(--green-ink);font-weight:700}
 .slot b{display:block;color:var(--blue-ink)}
 
 /* invoices */
+.relatorio{background:#fff;border-radius:16px;padding:28px;display:grid;gap:14px}.relatorio table{width:100%;border-collapse:collapse}.relatorio th,.relatorio td{text-align:left;padding:8px;border-bottom:1px solid #e5e7eb}.relatorio .num{text-align:right}
+@media print{header,nav,.fab,.acts,.tabs,.mtabs{display:none!important}.relatorio{box-shadow:none}}
 .chip.c-warn{background:#fff4e5;color:#9a5b00}.edit.warn{border-color:#f0a020;background:#fffaf0}
 .real-local{display:grid;gap:4px;margin-top:14px;padding:14px;border-radius:12px;background:rgba(37,99,235,.06)}.real-local .real-login{justify-items:start;border:0;margin-top:6px;padding-top:0;max-width:none}.real-local .opts{justify-content:flex-start}
 .real-login{display:grid;gap:8px;justify-items:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line,#e5e7eb);width:100%;max-width:480px}.real-login .opts{flex-wrap:wrap;justify-content:center}.real-login input{min-width:220px}.linkbtn{background:none;border:0;padding:0;color:inherit;text-decoration:underline;cursor:pointer;font:inherit}
@@ -344,7 +346,7 @@ select.edit{width:auto;text-align:left}
 }
 @media (max-width:760px){
   .pills{display:none}
-  .tabbar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:28;background:var(--glass-strong);backdrop-filter:saturate(1.6) blur(18px);-webkit-backdrop-filter:saturate(1.6) blur(18px);border-top:1px solid var(--line);padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+  .tabbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:28;background:var(--glass-strong);backdrop-filter:saturate(1.6) blur(18px);-webkit-backdrop-filter:saturate(1.6) blur(18px);border-top:1px solid var(--line);padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
   .tabbar.admin{grid-template-columns:repeat(2,minmax(0,1fr))}
   .tabbar button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;border-radius:12px;color:var(--subtle);font-size:.68rem;font-weight:600;position:relative}
   .tabbar button svg{width:22px;height:22px}
@@ -552,6 +554,7 @@ function mini(p){return PHOTOS[p.id]?`<span class="mini photo-mini"><img src="${
 
 /* icons */
 const IC={
+  resultados:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
   invoices:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h7M9 17h5"/></svg>',
   compare:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20V11M10 20V5M16 20v-6M21 20H3"/></svg>',
@@ -592,7 +595,7 @@ function postHTML(p,style){
       <div class="p-name" style="font-size:7.6cqw;margin-top:3.5cqw">${esc(p.name)}</div><div class="p-size" style="font-size:4.2cqw">${esc(p.size)}</div>${comp?`<div class="p-comp" style="opacity:.85;font-size:3.6cqw">${comp}</div>`:''}</div>
     <div class="p-ph" style="right:6cqw;top:22cqw;width:38cqw;height:50cqw">${ph}</div>
     <div style="position:absolute;left:5cqw;bottom:12cqw;background:${c2};color:${i2};border-radius:99px;padding:2.4cqw 5cqw;transform:rotate(-4deg);box-shadow:0 2cqw 4cqw rgba(0,0,0,.2)"><span class="p-price" style="font-size:11cqw">${eur(sg.price)}</span></div>
-    <div class="p-foot" style="text-align:right">Só esta semana</div></div>`;
+    <div class="p-foot" style="text-align:right">Diga <b>${cd}</b> na caixa</div></div>`;
   if(style===1)return `<div class="post" style="background:#FFFFFF;color:#0F172A;box-shadow:inset 0 0 0 1px rgba(15,23,42,.06)">
     <div style="position:absolute;inset:0 0 auto 0;height:21cqw;background:${c1}"></div>
     <div class="p-top" style="color:${i1}">${logo}<span>${esc(s.name)}</span></div>
@@ -600,14 +603,14 @@ function postHTML(p,style){
     <div style="position:absolute;left:51cqw;right:5cqw;top:28cqw"><div class="p-name" style="font-size:6.6cqw">${esc(p.name)}</div><div class="p-size" style="font-size:3.8cqw">${esc(p.size)}</div>
       <div class="p-price" style="color:${pc};font-size:12.5cqw;margin-top:4cqw">${eur(sg.price)}</div>
       <span class="p-chip" style="background:${c2};color:${i2};margin-top:2.5cqw;font-size:3.4cqw">ESTA SEMANA</span>${comp?`<div class="p-comp" style="color:#475569;font-size:3.4cqw">${comp}</div>`:''}</div>
-    <div class="p-foot" style="color:#475569;font-size:3.8cqw">Promoção válida esta semana na loja</div></div>`;
+    <div class="p-foot" style="color:#475569;font-size:3.8cqw">Diga <b style="color:#0F172A">${cd}</b> na caixa · válido esta semana</div></div>`;
   return `<div class="post" style="background:${c2} repeating-linear-gradient(135deg,rgba(255,255,255,.10) 0 4cqw,rgba(255,255,255,0) 4cqw 8cqw);color:${i2}">
     <div style="position:absolute;left:6cqw;top:6cqw;font-size:7cqw;font-weight:800">SÓ ESTA SEMANA</div>
     <div style="position:absolute;left:6cqw;right:6cqw;top:19cqw;height:58cqw;background:#FFFFFF;color:#0F172A;border-radius:4cqw;transform:rotate(-2.5deg);box-shadow:0 2cqw 6cqw rgba(0,0,0,.18);display:flex;gap:3cqw;padding:4cqw;align-items:center">
       <div style="width:40%;height:100%;display:grid;place-items:center">${ph.replace('<img','<img style="max-width:100%;max-height:100%;object-fit:contain"')}</div>
       <div style="flex:1;min-width:0"><div class="p-name" style="font-size:6.4cqw">${esc(p.name)}</div><div class="p-size" style="font-size:3.6cqw">${esc(p.size)}</div>
         <div class="p-price" style="color:${pc};font-size:12cqw;margin-top:3cqw">${eur(sg.price)}</div>${comp?`<div class="p-comp" style="color:#475569;font-size:3.3cqw">${comp}</div>`:''}</div></div>
-    <div class="p-foot" style="display:flex;align-items:center;gap:3cqw">${logo2}<span><b style="font-family:var(--f-head);letter-spacing:0">${esc(s.name)}</b><br>${esc(s.city)}</span></div></div>`;
+    <div class="p-foot" style="display:flex;align-items:center;gap:3cqw">${logo2}<span><b style="font-family:var(--f-head);letter-spacing:0">${esc(s.name)}</b><br>${esc(s.city)}</span><span style="margin-left:auto;text-align:right">Diga na caixa<br><b>${cd}</b></span></div></div>`;
 }
 function postIllustrated(p,style){
   const s=S.store,c1=s.c1,c2=s.c2,i1=ink(c1),i2=ink(c2),sg=suggest(p),cd=code(p);
@@ -637,8 +640,8 @@ function postIllustrated(p,style){
 const STYLE_NAMES=['Destaque','Montra','Folheto'];
 
 /* nav */
-const OWNER_TABS=[['home','Início'],['promos','Promoções'],['posts','Publicações']];
-const MOBILE_TABS=['home','promos','posts'];
+const OWNER_TABS=[['home','Início'],['promos','Promoções'],['posts','Publicações'],['resultados','Resultados']];
+const MOBILE_TABS=['home','promos','posts','resultados'];
 const OWNER_MENU_TABS=['invoices','config','fotos'];
 const ADMIN_TABS=[['stores','Lojas'],['log','Registo']];
 function renderChrome(){
@@ -787,6 +790,45 @@ function vPosts(){
   ${done.length?`<section class="card pad"><div class="card-h"><h2>Agendadas</h2></div><div class="list">${done.map(x=>`<div class="item"><div style="width:64px;flex:none">${postHTML(x.p,x.pr.choice)}</div><div class="grow"><b>${esc(x.p.name)} a ${eur(x.s.price)}</b><div class="xs muted">${STYLE_NAMES[x.pr.choice]}</div></div><span class="chip c-blue num">${whenTxt(x.pr.sched)}</span><button class="btn sm" data-act="rechoose" data-id="${x.p.id}">${IC.swap.replace('<svg','<svg width="15" height="15"')}Mudar</button></div>`).join('')}</div></section>`:''}`;
 }
 
+/* ===== Resultados: prova de que as promoções trazem clientes ===== */
+function usos(pr,desde){const u=pr.usos||{};return Object.keys(u).filter(d=>!desde||d>=desde).reduce((a,d)=>a+u[d],0)}
+function mesKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01'}
+function resultados(){
+  const hoje=dayKey(new Date()),mes=mesKey();
+  // quem vem pela promoção compra mais: o lucro conta o cesto inteiro (cesto médio × margem média da loja)
+  const cesto=+S.store.cesto||15,mg=Object.values(S.margins).reduce((a,v)=>a+v,0)/Object.keys(S.margins).length/100,porCliente=cesto*mg;
+  const linhas=stats().appr.map(x=>{const n=usos(x.pr,mes);return {p:x.p,s:x.s,hoje:(x.pr.usos||{})[hoje]||0,n,vendas:n*cesto,lucro:n*porCliente}});
+  const tot=linhas.reduce((a,l)=>({n:a.n+l.n,vendas:a.vendas+l.vendas,lucro:a.lucro+l.lucro}),{n:0,vendas:0,lucro:0});
+  return {linhas,tot,plano:PLAN_PRICE[S.store.plan]||0,cesto,mg,porCliente};
+}
+function vResultados(){
+  const r=resultados(),t=r.tot,pago=r.plano?t.lucro/r.plano:0,falta=Math.max(0,Math.ceil((r.plano-t.lucro)/Math.max(.01,r.porCliente)));
+  const mesN=new Intl.DateTimeFormat('pt-PT',{month:'long',year:'numeric'}).format(new Date());
+  const veredito=t.lucro>=r.plano&&r.plano?`<b style="color:var(--green-ink)">O admarket já se pagou ${pago.toLocaleString('pt-PT',{maximumFractionDigits:1})} vezes este mês.</b>`
+    :`Faltam cerca de <b>${falta}</b> clientes com cupão para pagar o plano ${esc(S.store.plan)} (${eur(r.plano)}/mês).`;
+  return `<div class="ph"><div><h1>Resultados</h1><p>Cada publicação traz um código. Quando um cliente o diz na caixa, carregue em <b>+1</b>. No fim do mês vê quanto as promoções venderam e se o admarket se pagou.</p></div><button class="btn" data-act="relatorio">Relatório de ${esc(mesN)}</button></div>
+  <section class="card pad"><div class="card-h"><h2>Registo na caixa</h2><span class="xs muted">Um toque por cliente que disser o código</span></div>
+    ${r.linhas.length?`<div class="list">${r.linhas.map(l=>`<div class="item"><div class="prod" style="flex:1;min-width:0">${mini(l.p)}<div><b>${esc(l.p.name)}</b><span class="sub" style="display:block">Código <b>${esc(code(l.p))}</b> · ${eur(l.s.price)} · hoje ${l.hoje} · mês ${l.n}</span></div></div>
+      <button class="btn sm" data-act="uso-menos" data-id="${l.p.id}" aria-label="Retirar um registo de ${esc(l.p.name)}" ${l.hoje?'':'disabled'}>−1</button><button class="btn green" data-act="uso-mais" data-id="${l.p.id}" aria-label="Registar um cliente para ${esc(l.p.name)}">+1</button></div>`).join('')}</div>`
+    :'<p class="small muted">Ainda não há promoções aprovadas. Aprove uma em Promoções e o código aparece aqui e nas publicações.</p>'}
+  </section>
+  <section class="metrics" aria-label="Resultados do mês">
+    <div class="card metric"><span class="m-ic" style="background:var(--blue-soft);color:var(--blue-2)">${IC.tag}</span><div class="m-body"><span class="small muted">Clientes com cupão (mês)</span><span class="m-val num">${t.n}</span></div></div>
+    <div class="card metric"><span class="m-ic" style="background:var(--orange-soft);color:var(--orange)">${IC.cal}</span><div class="m-body"><span class="small muted">Vendas trazidas (estimativa)</span><span class="m-val num">${eur(t.vendas)}</span></div></div>
+    <div class="card metric"><span class="m-ic" style="background:var(--green-soft);color:var(--green-deep)">${IC.trend}</span><div class="m-body"><span class="small muted">Lucro gerado</span><span class="m-val num" style="color:var(--green-ink)">${eur(t.lucro)}</span></div></div>
+  </section>
+  <section class="card pad"><p class="small" style="margin:0">${veredito}</p><p class="xs muted" style="margin:8px 0 0">Conta com um cesto médio de <input class="edit num" type="number" min="1" step="0.5" value="${r.cesto}" data-cfg="cesto" aria-label="Cesto médio em euros" style="width:5.5em"> € e a margem média da loja (${Math.round(r.mg*100)} %): cerca de ${eur(r.porCliente)} de lucro por cliente.</p></section>`;
+}
+function vRelatorio(){
+  const r=resultados(),mesN=new Intl.DateTimeFormat('pt-PT',{month:'long',year:'numeric'}).format(new Date());
+  return `<div class="relatorio"><h1>${esc(S.store.name)} · ${esc(mesN)}</h1><p class="muted">Relatório admarket das promoções do mês</p>
+  <table><thead><tr><th>Produto</th><th>Preço promo</th><th>Clientes com cupão</th><th>Vendas trazidas</th><th>Lucro estimado</th></tr></thead><tbody>
+  ${r.linhas.map(l=>`<tr><td>${esc(l.p.name)}</td><td class="num">${eur(l.s.price)}</td><td class="num">${l.n}</td><td class="num">${eur(l.vendas)}</td><td class="num">${eur(l.lucro)}</td></tr>`).join('')}
+  <tr><td><b>Total</b></td><td></td><td class="num"><b>${r.tot.n}</b></td><td class="num"><b>${eur(r.tot.vendas)}</b></td><td class="num"><b>${eur(r.tot.lucro)}</b></td></tr></tbody></table>
+  <p>Plano ${esc(S.store.plan)}: ${eur(r.plano)}/mês · ${r.tot.lucro>=r.plano?`o lucro das promoções pagou o plano ${(r.tot.lucro/r.plano).toLocaleString('pt-PT',{maximumFractionDigits:1})} vezes.`:`o lucro das promoções cobriu ${Math.round(r.plano?r.tot.lucro/r.plano*100:0)} % do plano.`}</p>
+  <p class="xs muted">Contagem feita na caixa pelos códigos das publicações. Estimativa: cada cliente com cupão gasta o cesto médio (${eur(r.cesto)}) com a margem média da loja (${Math.round(r.mg*100)} %).</p>
+  <div class="acts"><button class="btn" data-act="relatorio-fechar">Fechar</button><button class="btn primary" data-act="relatorio-imprimir">Imprimir ou guardar PDF</button></div></div>`;
+}
 function vConfig(){
   const s=S.store,demo=prod('leite')||S.products[0]||catalogo().find(p=>p.id==='leite');
   return `<div class="ph"><div><h1>A sua loja</h1><p>Configurada uma vez, na adesão. Logótipo e cores entram em todos os posts; as margens limitam todas as sugestões.</p></div></div>
@@ -1141,12 +1183,12 @@ function extraSlots(k){
   return h;
 }
 
-const VIEWS={fotos:vFotos,home:vHome,invoices:vInvoices,compare:vCompare,promos:vPromos,posts:vPosts,config:vConfig,stores:vStores,log:vLog};
+const VIEWS={resultados:vResultados,fotos:vFotos,home:vHome,invoices:vInvoices,compare:vCompare,promos:vPromos,posts:vPosts,config:vConfig,stores:vStores,log:vLog};
 function vVazio(){return `<div class="ph"><div><h1>${S.tab==='posts'?'Publicações':S.tab==='promos'?'Promoções':'Olá, '+esc(S.store.name)}</h1></div></div>
   <div class="drop" style="cursor:default"><span class="big-ic">${IC.camera}</span><h2>Ainda não há produtos</h2>
   <p class="muted small" style="max-width:46ch">Fotografe ou carregue uma fatura de fornecedor. A app lê os custos, compara com o Continente, o Pingo Doce e o Auchan e sugere logo as promoções e as publicações.</p>
   <div class="opts"><button class="btn primary" data-act="tab" data-id="invoices">Ler uma fatura</button></div></div>`}
-function render(){renderChrome();document.getElementById('main').innerHTML=(!S.products.length&&['home','promos','posts'].includes(S.tab))?vVazio():VIEWS[S.tab]();bindDrop();save()}
+function render(){renderChrome();document.getElementById('main').innerHTML=(!S.products.length&&['home','promos','posts','resultados'].includes(S.tab))?vVazio():VIEWS[S.tab]();bindDrop();save()}
 
 /* actions */
 const ACT={
@@ -1190,6 +1232,11 @@ const ACT={
   'inv-done'(){S.pending=null;S.tab='home';render();scrollTo(0,0)},
   'inv-new'(){S.pending=null;render()},
   reset(){S=seed();render();scrollTo(0,0);toast('Demonstração reposta')},
+  'uso-mais'(id){const pr=promo(id),u=Object.assign({},pr.usos),k=dayKey(new Date());u[k]=(u[k]||0)+1;setPromo(id,{usos:u});render();toast('+1 cliente com cupão')},
+  'uso-menos'(id){const pr=promo(id),u=Object.assign({},pr.usos),k=dayKey(new Date());if(u[k]){u[k]--;setPromo(id,{usos:u});render()}},
+  relatorio(){document.getElementById('main').innerHTML=vRelatorio();scrollTo(0,0)},
+  'relatorio-fechar'(){render()},
+  'relatorio-imprimir'(){print()},
   'modo-teste'(){S=seedTeste();S.tab='invoices';render();scrollTo(0,0);toast('Modo teste: app vazia. Leia uma fatura.')}
 };
 document.addEventListener('click',e=>{
