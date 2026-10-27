@@ -642,7 +642,7 @@ const STYLE_NAMES=['Destaque','Montra','Folheto'];
 /* nav */
 const OWNER_TABS=[['home','Início'],['promos','Promoções'],['posts','Publicações'],['resultados','Resultados']];
 const MOBILE_TABS=['home','promos','posts','resultados'];
-const OWNER_MENU_TABS=['invoices','config','fotos'];
+const OWNER_MENU_TABS=['invoices','compare','config','fotos'];
 const ADMIN_TABS=[['stores','Lojas'],['log','Registo']];
 function renderChrome(){
   const st=stats();
@@ -658,7 +658,7 @@ function renderChrome(){
   {const t=document.getElementById('ai-t');if(t)t.textContent=(typeof PROG!=='undefined'&&PROG)?`A preparar fotos ${PROG.done}/${PROG.total}`:'IA Ativa'}
   document.getElementById('me').innerHTML=`<button class="me-btn" data-act="menu" aria-expanded="${S.menu}" aria-haspopup="true">${S.view==='owner'?avatar(34):`<span class="avatar" style="background:#fff"><img src="${MARK}" alt="" style="object-fit:contain;padding:4px"></span>`}<span class="who"><b>${S.view==='owner'?esc(S.store.name):'Equipa admarket'}</b><span>${S.view==='owner'?'Plano '+esc(S.store.plan):'Painel de gestão'}</span></span></button>
     ${S.menu?`<div class="menu" role="menu">
-      ${S.view==='owner'?`<button role="menuitem" data-act="tab" data-id="invoices">${IC.invoices.replace('<svg','<svg width="18" height="18"')}Faturas${S.tab==='invoices'?'<span class="tick">✓</span>':''}</button><button role="menuitem" data-act="tab" data-id="config"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Configuração da loja${S.tab==='config'?'<span class="tick">✓</span>':''}</button><hr>`:''}
+      ${S.view==='owner'?`<button role="menuitem" data-act="tab" data-id="invoices">${IC.invoices.replace('<svg','<svg width="18" height="18"')}Faturas${S.tab==='invoices'?'<span class="tick">✓</span>':''}</button><button role="menuitem" data-act="tab" data-id="compare">${IC.tag.replace('<svg','<svg width="18" height="18"')}Preços da concorrência${S.tab==='compare'?'<span class="tick">✓</span>':''}</button><button role="menuitem" data-act="tab" data-id="config"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Configuração da loja${S.tab==='config'?'<span class="tick">✓</span>':''}</button><hr>`:''}
       <button role="menuitem" data-act="view" data-id="owner">${IC.config.replace('<svg','<svg width="18" height="18"')}Vista da loja${S.view==='owner'?'<span class="tick">✓</span>':''}</button>
       <button role="menuitem" data-act="view" data-id="admin">${IC.stores.replace('<svg','<svg width="18" height="18"')}Painel admarket${S.view==='admin'?'<span class="tick">✓</span>':''}</button>
       <hr><button role="menuitem" data-act="modo-teste">${IC.reset.replace('<svg','<svg width="18" height="18"')}Modo teste (app vazia)</button><button role="menuitem" data-act="reset">${IC.reset.replace('<svg','<svg width="18" height="18"')}Repor demonstração</button></div>`:''}`;
@@ -755,11 +755,11 @@ function vCompare(){
   return `<div class="ph"><div><h1>Preços</h1><p>O seu custo ao lado das grandes superfícies, com o mínimo que respeita a margem e a promoção sugerida.</p></div></div>
   <section class="card"><div class="tw"><table><thead><tr><th>Produto</th><th>Custo</th><th>Continente</th><th>Pingo Doce</th><th>Auchan</th><th>Mínimo</th><th>Sugestão</th></tr></thead><tbody>
   ${S.products.map(p=>{const s=suggest(p),lo=lowComp(p);return `<tr><td><div class="prod">${mini(p)}<div><b>${esc(p.name)}</b><span class="sub">${esc(p.size)} · ${p.cat}${p.real?' · preços reais':''}</span></div></div></td>
-    <td class="num">${eur(p.cost)}</td>${(cp=>Object.keys(COMP).map(k=>`<td class="num ${k===lo.key?'low':''}">${eurN(cp[k])}${cp[k]!=null&&cp[k]!==p.comp?.[k]?'<span class="sub">folheto</span>':''}</td>`).join(''))(compEf(p))}
+    <td class="num">${eur(p.cost)}</td>${(ci=>Object.keys(COMP).map(k=>`<td class="num ${k===lo.key?'low':''}">${eurN(ci.c[k])}${ci.src[k]?`<span class="sub">${ci.src[k]==='site'?'site · hoje':'folheto'}</span>`:''}</td>`).join(''))(compInfo(p))}
     <td class="num">${eur(s.min)}<span class="sub">${S.margins[p.cat]}% margem</span></td>
     <td class="num"><b>${eur(s.price)}</b><span class="sub" style="color:${s.beats?'var(--green-ink)':'var(--orange-ink)'}">${s.beats?pct(s.margin)+' margem':'acima da concorrência'}</span></td></tr>`}).join('')}
   </tbody></table></div></section>
-  <p class="xs muted">A verde, o mais barato das três cadeias. Preços reais recolhidos a 21 out 2026; os preços de custo são de exemplo.</p>`;
+  <p class="xs muted">A verde, o mais barato das três cadeias. «site · hoje»: preço visto nos sites nas últimas 48 h (pesquisa todas as madrugadas). «folheto»: promoção do folheto em vigor, quando é mais barata. Sem marca, é o último preço conhecido.</p>`;
 }
 
 function prow(x){
@@ -1188,7 +1188,7 @@ function vVazio(){return `<div class="ph"><div><h1>${S.tab==='posts'?'Publicaç�
   <div class="drop" style="cursor:default"><span class="big-ic">${IC.camera}</span><h2>Ainda não há produtos</h2>
   <p class="muted small" style="max-width:46ch">Fotografe ou carregue uma fatura de fornecedor. A app lê os custos, compara com o Continente, o Pingo Doce e o Auchan e sugere logo as promoções e as publicações.</p>
   <div class="opts"><button class="btn primary" data-act="tab" data-id="invoices">Ler uma fatura</button></div></div>`}
-function render(){renderChrome();document.getElementById('main').innerHTML=(!S.products.length&&['home','promos','posts','resultados'].includes(S.tab))?vVazio():VIEWS[S.tab]();bindDrop();save();if(typeof ensureFolhetos==='function')setTimeout(ensureFolhetos,0)}
+function render(){renderChrome();document.getElementById('main').innerHTML=(!S.products.length&&['home','promos','posts','resultados'].includes(S.tab))?vVazio():VIEWS[S.tab]();bindDrop();save();if(typeof ensureFolhetos==='function')setTimeout(()=>{ensureFolhetos();ensurePrecos()},0)}
 
 /* actions */
 const ACT={
@@ -1307,6 +1307,7 @@ async function _afterLogin(){
     let {data:l}=await REAL.sb.from('lojas').select('id,nome').order('criado_em').limit(1);
     if(!l?.length){const {data:id}=await REAL.sb.rpc('criar_loja',{p_nome:S.store.name});l=[{id,nome:S.store.name}]}
     REAL.loja=l[0];await loadFaturas();
+    ensureFolhetos();ensurePrecos();   // folhetos e preços dos sites assim que há sessão
   }
   if(S.tab==='invoices')render();
 }
@@ -1500,8 +1501,32 @@ function folhetosDe(p){
   for(const f of FOL.rows){const m=folhetoCombina(p,f);if(m)r.push(Object.assign({},f,{preco:+f.preco,preco_antes:f.preco_antes==null?null:+f.preco_antes,certo:m.certo,ativo:(!f.inicio||f.inicio<=hoje)&&(!f.fim||f.fim>=hoje)}))}
   r.sort((a,b)=>(b.ativo-a.ativo)||(a.preco-b.preco));return FOL_CACHE[p.id]=r;
 }
-// preço da concorrência a usar: o mais baixo entre o preço normal recolhido e a promoção do folheto em vigor (só tamanho confirmado, sem cartão)
-function compEf(p){const c=Object.assign({},p.comp||{});for(const f of folhetosDe(p))if(f.ativo&&f.certo&&!f.cartao&&COMP[f.cadeia]&&(c[f.cadeia]==null||f.preco<c[f.cadeia]))c[f.cadeia]=f.preco;return c}
+/* preços vistos nos sites das grandes cadeias (pesquisa de madrugada no servidor; produto novo é pesquisado na hora) */
+const VIVO={key:null,map:{},at:null,busy:false,pedidos:new Set()};
+function chaveP(p){return [p.brand,p.prod||p.name,p.qty||p.size].map(x=>norm(x).trim()).join('|')}
+async function ensurePrecos(){
+  if(!REAL.sb||!REAL.user||VIVO.busy||!S.products.length)return;
+  const ps=S.products.filter(p=>p.brand),itens=ps.map(p=>({chave:chaveP(p),marca:p.brand,palavras:p.prod||p.name,tamanho:p.qty||p.size||''}));
+  const key=itens.map(i=>i.chave).sort().join(',');if(!itens.length||key===VIVO.key)return;
+  VIVO.busy=true;VIVO.key=key;
+  try{
+    const {data:novos}=await REAL.sb.rpc('registar_pesquisas',{itens});
+    const pedir=(novos||[]).filter(k=>!VIVO.pedidos.has(k));
+    if(pedir.length){pedir.forEach(k=>VIVO.pedidos.add(k));REAL.sb.functions.invoke('pesquisar-precos',{body:{chaves:pedir}}).then(()=>{VIVO.key=null;ensurePrecos()}).catch(()=>{})}
+    const {data}=await REAL.sb.from('precos_concorrencia').select('chave,cadeia,preco,preco_promo,visto_em,nome_site').in('chave',itens.map(i=>i.chave));
+    VIVO.map={};for(const r of data||[])(VIVO.map[r.chave]=VIVO.map[r.chave]||{})[r.cadeia]=r;
+    VIVO.at=new Date();render();
+  }catch(e){}finally{VIVO.busy=false}
+}
+// preço da concorrência a usar, por cadeia: o visto no site há menos de 48 h (senão o último conhecido) e, se for mais baixo,
+// a promoção do folheto em vigor (só com tamanho confirmado e sem cartão). src diz de onde veio cada preço.
+function compInfo(p){
+  const c=Object.assign({},p.comp||{}),src={},v=VIVO.map[chaveP(p)]||{};
+  for(const k in v){const r=v[k];if(!COMP[k]||Date.now()-new Date(r.visto_em)>48*3600e3)continue;const pr=+(r.preco_promo||r.preco);if(pr>0){c[k]=pr;src[k]='site'}}
+  for(const f of folhetosDe(p))if(f.ativo&&f.certo&&!f.cartao&&COMP[f.cadeia]&&(c[f.cadeia]==null||f.preco<c[f.cadeia])){c[f.cadeia]=f.preco;src[f.cadeia]='folheto'}
+  return {c,src};
+}
+function compEf(p){return compInfo(p).c}
 const titulo=s=>String(s||'').toLowerCase().replace(/(^|[\s/(])(\S)/g,(a,x,y)=>x+y.toUpperCase()).replace(/ (De|Da|Do|Das|Dos|E|Em|C|S|P)(?=[\s/])/g,m=>m.toLowerCase());
 function folhetoCardHTML(){
   if(!REAL.user||!S.products.length)return '';
