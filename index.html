@@ -474,7 +474,7 @@ const eur=v=>fmt.format(v);
 const pct=v=>(Math.round(v*1000)/10).toLocaleString('pt-PT')+'%';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const r2=v=>Math.round(v*100)/100;
-function lowComp(p){let k=null;for(const c in p.comp){if(p.comp[c]==null)continue;if(k==null||p.comp[c]<p.comp[k])k=c}return {key:k,name:COMP[k],price:p.comp[k]}}
+function lowComp(p){const cp=compEf(p);let k=null;for(const c in cp){if(cp[c]==null)continue;if(k==null||cp[c]<cp[k])k=c}return {key:k,name:COMP[k],price:cp[k]}}
 const eurN=v=>v==null?'—':fmt.format(v);
 function suggest(p){
   const m=S.margins[p.cat]/100,min=p.cost/(1-m),low=lowComp(p).price;
@@ -684,7 +684,7 @@ function vHome(){
     hero=`<section class="card pad" style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px 20px"><span class="m-ic" style="background:var(--green-soft);color:var(--green-deep);width:56px;height:56px;border-radius:16px">${IC.check}</span><h2>Está tudo decidido</h2><p class="muted" style="max-width:44ch">Não há sugestões pendentes. Carregue uma fatura nova para a IA encontrar mais promoções.</p><button class="btn primary" data-act="sheet">Carregar fatura</button></section>`;
   }else{
     const x=q[S.feat],p=x.p,s=x.s,pick=S.pick[p.id]??0,slot=nextSlot();
-    const comps=Object.keys(COMP).map(k=>({n:COMP[k],v:p.comp[k]}));
+    const cp=compEf(p),comps=Object.keys(COMP).map(k=>({n:COMP[k],v:cp[k]}));
     const max=Math.max(...comps.map(c=>c.v||0),s.price);
     hero=`<section class="hero">
       <article class="card sug">
@@ -723,7 +723,7 @@ function vHome(){
       ${st.toDesign?`<div class="item" style="margin-top:4px"><div class="grow small"><b>${st.toDesign}</b> aprovada à espera de design</div><button class="btn sm primary" data-act="tab" data-id="posts">Escolher</button></div>`:''}
     </div>
   </section>`;
-  return `<div class="ph"><div><span class="label">${dlong.format(new Date())}</span><h1>Olá, ${esc(S.store.name)}</h1></div></div>${metrics}${hero}${lower}
+  return `<div class="ph"><div><span class="label">${dlong.format(new Date())}</span><h1>Olá, ${esc(S.store.name)}</h1></div></div>${metrics}${hero}${folhetoCardHTML()}${lower}
     <p class="foot-note">Demonstração · preços de concorrência reais (21 out 2026), custos de exemplo · fotos sem fundo da biblioteca admarket (Drive) · <button data-act="reset">repor</button></p>`;
 }
 
@@ -755,7 +755,7 @@ function vCompare(){
   return `<div class="ph"><div><h1>Preços</h1><p>O seu custo ao lado das grandes superfícies, com o mínimo que respeita a margem e a promoção sugerida.</p></div></div>
   <section class="card"><div class="tw"><table><thead><tr><th>Produto</th><th>Custo</th><th>Continente</th><th>Pingo Doce</th><th>Auchan</th><th>Mínimo</th><th>Sugestão</th></tr></thead><tbody>
   ${S.products.map(p=>{const s=suggest(p),lo=lowComp(p);return `<tr><td><div class="prod">${mini(p)}<div><b>${esc(p.name)}</b><span class="sub">${esc(p.size)} · ${p.cat}${p.real?' · preços reais':''}</span></div></div></td>
-    <td class="num">${eur(p.cost)}</td>${Object.keys(COMP).map(k=>`<td class="num ${k===lo.key?'low':''}">${eurN(p.comp[k])}</td>`).join('')}
+    <td class="num">${eur(p.cost)}</td>${(cp=>Object.keys(COMP).map(k=>`<td class="num ${k===lo.key?'low':''}">${eurN(cp[k])}${cp[k]!=null&&cp[k]!==p.comp?.[k]?'<span class="sub">folheto</span>':''}</td>`).join(''))(compEf(p))}
     <td class="num">${eur(s.min)}<span class="sub">${S.margins[p.cat]}% margem</span></td>
     <td class="num"><b>${eur(s.price)}</b><span class="sub" style="color:${s.beats?'var(--green-ink)':'var(--orange-ink)'}">${s.beats?pct(s.margin)+' margem':'acima da concorrência'}</span></td></tr>`}).join('')}
   </tbody></table></div></section>
@@ -1188,7 +1188,7 @@ function vVazio(){return `<div class="ph"><div><h1>${S.tab==='posts'?'Publicaç�
   <div class="drop" style="cursor:default"><span class="big-ic">${IC.camera}</span><h2>Ainda não há produtos</h2>
   <p class="muted small" style="max-width:46ch">Fotografe ou carregue uma fatura de fornecedor. A app lê os custos, compara com o Continente, o Pingo Doce e o Auchan e sugere logo as promoções e as publicações.</p>
   <div class="opts"><button class="btn primary" data-act="tab" data-id="invoices">Ler uma fatura</button></div></div>`}
-function render(){renderChrome();document.getElementById('main').innerHTML=(!S.products.length&&['home','promos','posts','resultados'].includes(S.tab))?vVazio():VIEWS[S.tab]();bindDrop();save()}
+function render(){renderChrome();document.getElementById('main').innerHTML=(!S.products.length&&['home','promos','posts','resultados'].includes(S.tab))?vVazio():VIEWS[S.tab]();bindDrop();save();if(typeof ensureFolhetos==='function')setTimeout(ensureFolhetos,0)}
 
 /* actions */
 const ACT={
@@ -1465,6 +1465,53 @@ function realListHTML(){
   if(!REAL.user)return '';
   return `<section class="card pad"><div class="card-h"><h2>Faturas reais</h2><span class="xs muted">guardadas no servidor</span></div>
     <div class="list">${REAL.faturas.length?REAL.faturas.map(f=>`<div class="item"><span class="doc" style="width:40px;height:50px;font-size:.62rem">${f.origem==='pdf'?'PDF':'Foto'}</span><div class="grow"><b>${esc(f.fornecedores?.nome||('NIF '+(f.fornecedores?.nif||'?')))}</b><div class="xs muted">${esc(f.numero||'')} ${f.data?'· '+f.data:''} · ${f.metodo==='ia'?f.tokens+' tokens':'0 tokens'}</div></div><span class="chip ${f.estado==='confirmada'?'c-green':'c-grey'}">${f.linhas_fatura?.[0]?.count||0} produtos</span></div>`).join(''):'<p class="small muted">Ainda sem faturas reais.</p>'}</div></section>`;
+}
+
+/* ===== folhetos das grandes cadeias: lidos todos os dias no servidor (0 tokens); aqui só se cruzam com os produtos da loja ===== */
+const FOL={key:null,rows:[],at:null,busy:false};let FOL_CACHE={};
+function marcasLoja(){const s=new Set();for(const p of S.products){if(!p.brand)continue;s.add(p.brand.trim());s.add(norm(p.brand).trim())}return [...s].filter(m=>m.length>=3)}
+async function ensureFolhetos(){
+  if(!REAL.sb||!REAL.user||FOL.busy||!S.products.length)return;
+  const ms=marcasLoja(),key=ms.slice().sort().join('|');if(key===FOL.key)return;
+  FOL.busy=true;FOL.key=key;
+  try{const {data,error}=await REAL.sb.rpc('folhetos_para',{marcas:ms});if(!error){FOL.rows=data||[];FOL.at=new Date();FOL_CACHE={};render()}}
+  catch(e){}finally{FOL.busy=false}
+}
+function medida(t){
+  t=norm(t).replace(/(\d),(\d)/g,'$1.$2');let m=t.match(/(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*(kg|g|ml|cl|lt|l)\b/),n,u;
+  if(m){n=m[1]*m[2];u=m[3]}else{m=t.match(/(\d+(?:\.\d+)?)\s*(kg|g|ml|cl|lt|l|un|unid|doses|capsulas|rolos)\b/);if(!m)return null;n=+m[1];u=m[2]}
+  const f={kg:1000,g:1,l:1000,lt:1000,cl:10,ml:1}[u];return f?{v:n*f,d:(u==='kg'||u==='g')?'g':'ml'}:{v:n,d:u.startsWith('un')?'un':u}
+}
+const QUALIF=['lactose','proteina','cacau','chocolate','bio','light','zero','descafeinado','soluvel','capsulas','grao','integral','acucar','spray','pack'],QUALIF_VAR=['magro','gordo'];
+function folhetoCombina(p,f){
+  const n=norm(f.nome),b=norm(p.brand||'');if(b.length<3||!n.includes(b))return null;     // a marca tem de aparecer
+  const own=norm(p.prod+' '+p.name+' '+(p.size||''));
+  const pal=norm(p.prod||p.name).split(/[^a-z0-9]+/).filter(w=>w.length>3&&!b.includes(w));
+  if(pal.length&&!pal.some(w=>n.includes(w.slice(0,5))))return null;                        // e pelo menos uma palavra do produto
+  if(QUALIF.some(q=>n.includes(q)&&!own.includes(q)))return null;                           // "sem lactose", "em grão"... é outro produto
+  if(!/\/\s/.test(f.nome)&&QUALIF_VAR.some(q=>n.includes(q)&&!own.includes(q)))return null; // "magro" (só aceita se for lista de variantes "MAGRO/ MEIO GORDO")
+  const sp=medida(p.qty||p.size||''),sf=medida(f.tamanho||f.nome);
+  if(sp&&sf&&(sp.d!==sf.d||Math.abs(sp.v-sf.v)/sp.v>0.05))return null;                     // outro tamanho
+  return {certo:!!(sp&&sf)};
+}
+function folhetosDe(p){
+  if(FOL_CACHE[p.id])return FOL_CACHE[p.id];
+  const hoje=dayKey(new Date()),r=[];
+  for(const f of FOL.rows){const m=folhetoCombina(p,f);if(m)r.push(Object.assign({},f,{preco:+f.preco,preco_antes:f.preco_antes==null?null:+f.preco_antes,certo:m.certo,ativo:(!f.inicio||f.inicio<=hoje)&&(!f.fim||f.fim>=hoje)}))}
+  r.sort((a,b)=>(b.ativo-a.ativo)||(a.preco-b.preco));return FOL_CACHE[p.id]=r;
+}
+// preço da concorrência a usar: o mais baixo entre o preço normal recolhido e a promoção do folheto em vigor (só tamanho confirmado, sem cartão)
+function compEf(p){const c=Object.assign({},p.comp||{});for(const f of folhetosDe(p))if(f.ativo&&f.certo&&!f.cartao&&COMP[f.cadeia]&&(c[f.cadeia]==null||f.preco<c[f.cadeia]))c[f.cadeia]=f.preco;return c}
+const titulo=s=>String(s||'').toLowerCase().replace(/(^|[\s/(])(\S)/g,(a,x,y)=>x+y.toUpperCase()).replace(/ (De|Da|Do|Das|Dos|E|Em|C|S|P)(?=[\s/])/g,m=>m.toLowerCase());
+function folhetoCardHTML(){
+  if(!REAL.user||!S.products.length)return '';
+  const av=S.products.map(p=>({p,f:folhetosDe(p)[0],min:suggest(p).min})).filter(x=>x.f).sort((a,b)=>(b.f.ativo-a.f.ativo)||(a.f.preco/a.min-b.f.preco/b.min));
+  const dia=d=>dfmt.format(new Date(d+'T12:00'));
+  return `<section class="card pad"><div class="card-h"><div><h2>Folhetos das grandes cadeias</h2><span class="xs muted">${FOL.at?`Lidos todos os dias · ${FOL.rows.length} promoções com as marcas da loja`:'A ler os folhetos desta semana…'}</span></div></div>
+    ${av.length?`<div class="list">${av.slice(0,6).map(({p,f,min})=>{const pode=f.preco>=min;return `<div class="item"><div style="width:44px;flex:none">${mini(p)}</div><div class="grow"><b>${esc(COMP[f.cadeia]||f.cadeia)} · ${esc(titulo(f.nome))}${f.tamanho?' · '+esc(f.tamanho.toLowerCase()):''}</b>
+      <div class="xs muted">${eur(f.preco)}${f.preco_antes?` (antes ${eur(f.preco_antes)})`:''} · ${f.ativo?(f.fim?'até '+dia(f.fim):'em vigor'):'a partir de '+dia(f.inicio)}${f.certo?'':' · tamanho a confirmar'}${f.cartao?' · com cartão':''}</div>
+      <div class="xs" style="margin-top:3px;color:${pode?'var(--green-ink)':'var(--orange-ink)'}">${f.ativo?'':'<b>Aviso antecipado.</b> '}${pode?`Pode acompanhar: o seu mínimo com margem é ${eur(min)}.`:`Não compita neste: fica abaixo do seu mínimo (${eur(min)}). Promova outro produto${f.ativo?'':' nessa semana'}.`}</div></div></div>`}).join('')}</div>`
+    :`<p class="small muted">${FOL.at?'Nenhum produto da loja aparece nos folhetos desta semana.':''}</p>`}</section>`;
 }
 sbInit();
 if(S.pending&&S.pending.real&&S.pending.stage==='reading')S.pending=null;
