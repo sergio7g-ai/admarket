@@ -478,6 +478,7 @@ function lowComp(p){const cp=compEf(p);let k=null;for(const c in cp){if(cp[c]==n
 const eurN=v=>v==null?'—':fmt.format(v);
 function suggest(p){
   const m=S.margins[p.cat]/100,min=p.cost/(1-m),low=lowComp(p).price;
+  if(low==null){let pr=r2(Math.ceil((min+0.0001)*10)/10-0.01);if(pr<min)pr=r2(pr+0.10);return {price:pr,min,low:null,margin:(pr-p.cost)/pr,minMargin:m,beats:false,semPreco:true}}   // ainda sem preço da concorrência
   let price=r2(Math.round(low*0.97*10)/10-0.01);
   if(price>=low)price=r2(price-0.10);
   if(price<min)price=r2(Math.ceil((min+0.0001)*10)/10-0.01);
@@ -503,7 +504,7 @@ function nextSlot(){
 }
 function stats(){
   const all=S.products.map(p=>({p,s:suggest(p),pr:promo(p.id)}));
-  const queue=all.filter(x=>x.pr.status==='pending').sort((a,b)=>(b.s.beats-a.s.beats)||((a.p.cat==='Frescos'?0:1)-(b.p.cat==='Frescos'?0:1)));
+  const queue=all.filter(x=>x.pr.status==='pending'&&!x.s.semPreco).sort((a,b)=>(b.s.beats-a.s.beats)||((a.p.cat==='Frescos'?0:1)-(b.p.cat==='Frescos'?0:1)));
   const appr=all.filter(x=>x.pr.status==='approved');
   const avg=appr.length?appr.reduce((a,x)=>a+x.s.margin,0)/appr.length:0;
   const clients=S.clientsBase+Object.values(S.promos).reduce((a,p)=>a+(p.clients||0),0);
@@ -775,7 +776,7 @@ function vPromos(){
   const st=stats();
   const groups=[['pending','Por decidir',st.queue],['approved','Aprovadas',st.all.filter(x=>x.pr.status==='approved')],['rejected','Rejeitadas',st.all.filter(x=>x.pr.status==='rejected')]];
   return `<div class="ph"><div><h1>Promoções</h1><p>Cada sugestão respeita a margem mínima da categoria. Nada é publicado sem aprovação, e cada decisão fica registada.</p></div><span class="chip c-orange">${st.pending} por decidir</span></div>
-  ${groups.map(([k,l,items])=>items.length?`<section class="card pad"><div class="card-h"><h2>${l}</h2><span class="xs muted">${items.length}</span></div>${items.map(prow).join('')}</section>`:'').join('')}`;
+  ${porConfirmarHTML()}${groups.map(([k,l,items])=>items.length?`<section class="card pad"><div class="card-h"><h2>${l}</h2><span class="xs muted">${items.length}</span></div>${items.map(prow).join('')}</section>`:'').join('')}`;
 }
 
 function vPosts(){
@@ -1188,7 +1189,8 @@ function vVazio(){return `<div class="ph"><div><h1>${S.tab==='posts'?'Publicaç�
   <div class="drop" style="cursor:default"><span class="big-ic">${IC.camera}</span><h2>Ainda não há produtos</h2>
   <p class="muted small" style="max-width:46ch">Fotografe ou carregue uma fatura de fornecedor. A app lê os custos, compara com o Continente, o Pingo Doce e o Auchan e sugere logo as promoções e as publicações.</p>
   <div class="opts"><button class="btn primary" data-act="tab" data-id="invoices">Ler uma fatura</button></div></div>`}
-function render(){renderChrome();document.getElementById('main').innerHTML=(!S.products.length&&['home','promos','posts','resultados'].includes(S.tab))?vVazio():VIEWS[S.tab]();bindDrop();save();if(typeof ensureFolhetos==='function')setTimeout(()=>{ensureFolhetos();ensurePrecos()},0)}
+function fotosProdutos(){for(const p of S.products)if(p.img&&!PHOTOS[p.id])PHOTOS[p.id]=p.img}   // foto do site para produtos confirmados
+function render(){fotosProdutos();renderChrome();document.getElementById('main').innerHTML=(!S.products.length&&['home','promos','posts','resultados'].includes(S.tab))?vVazio():VIEWS[S.tab]();bindDrop();save();if(typeof ensureFolhetos==='function')setTimeout(()=>{ensureFolhetos();ensurePrecos()},0)}
 
 /* actions */
 const ACT={
@@ -1414,7 +1416,7 @@ async function lerFaturaReal(file,info){
     let {data,error}=await REAL.sb.functions.invoke('ler-fatura',{body});
     if(error){let m=error.message;try{m=(await error.context.json()).erro||m}catch(_){}
       throw new Error(m)}
-    S.pending=Object.assign({},S.pending,{stage:'real-review',res:data});render();
+    S.pending=Object.assign({},S.pending,{stage:'real-review',res:data});render();sugerirProdutos(S.pending);
   }catch(e){S.pending=null;render();toast('Não consegui ler esta fatura: '+e.message);
     try{REAL.sb&&REAL.user&&REAL.sb.from('erros_app').insert({msg:String(e.message||e).slice(0,500),contexto:{tipo:info.kind,ficheiro:info.name,ua:navigator.userAgent.slice(0,120)}}).then(()=>{})}catch(_){}}   // para diagnóstico
 }
@@ -1426,15 +1428,15 @@ function realReviewHTML(pe){
     <span class="chip ${r.validada_qr?'c-green':'c-blue'}">${IC.check}${r.validada_qr?'Total confere com o QR':r.validada_qr===false?'Faltam linhas ou valores: confira com a fatura':'Confirme os valores'}</span>${(r.linhas||[]).some(l=>l.incerta)?` <span class="chip c-warn">${(r.linhas||[]).filter(l=>l.incerta).length} por confirmar</span>`:''}
     <h2 style="margin-top:8px">${esc(c.nifFornecedor?'Fornecedor NIF '+c.nifFornecedor:'Fornecedor')}</h2>
     <span class="xs muted">${esc(c.numero||'')} ${c.data?'· '+c.data:''} ${c.total?'· total '+eur(c.total):''} · ${how}</span></div></div></div>
-    <div class="tw"><table><thead><tr><th>Produto na fatura</th><th>Qtd.</th><th>Custo unit. (s/ IVA)</th><th>Produto</th></tr></thead><tbody>
-    ${(r.linhas||[]).map((l,i)=>`<tr><td><b>${esc(l.descricao)}</b>${l.ean?`<span class="sub">${l.ean}</span>`:''}</td><td class="num">${+l.quantidade}</td>
-      <td><input class="edit num${l.incerta?' warn':''}" id="rl-cost-${i}" type="number" step="0.0001" min="0" value="${(+l.custo_unit).toFixed(4)}" aria-label="Custo de ${esc(l.descricao)}"> €</td>
-      <td>${l.incerta?'<span class="chip c-warn">Confirme o custo</span>':l.produto_id?'<span class="chip c-green">Já conhecido</span>':r.local?'<span class="chip c-grey">Por guardar</span>':'<span class="chip c-blue">Novo · vai ser criado</span>'}</td></tr>`).join('')}
-    </tbody></table></div>
+    <div class="list" style="margin-top:6px">${(r.linhas||[]).map((l,i)=>`<div style="padding:14px 0;border-top:1px solid var(--line,#E5E7EB);display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap"><div style="min-width:0;flex:1 1 220px"><b>${esc(l.descricao)}</b>${l.ean?`<span class="xs muted" style="display:block">${l.ean}</span>`:''}</div>
+        <div style="display:flex;gap:8px;align-items:center;flex:none"><span class="xs muted num">${+l.quantidade} ×</span><input class="edit num${l.incerta?' warn':''}" id="rl-cost-${i}" type="number" step="0.0001" min="0" value="${(+l.custo_unit).toFixed(4)}" aria-label="Custo de ${esc(l.descricao)}" style="width:96px"> <span class="xs muted">€ s/ IVA</span></div></div>
+      ${l.incerta?'<span class="chip c-warn" style="align-self:flex-start">Confirme o custo</span>':''}
+      ${r.local?'':`<div><span class="label" style="display:block;margin-bottom:6px">É este produto?</span>${escolhaHTML(pe,i)}</div>`}</div>`).join('')}</div>
     ${r.local?`<div class="acts" style="margin-top:16px"><button class="btn" data-act="real-cancel">Fechar</button></div>
     <div class="real-local"><b class="small">Leitura feita só neste aparelho, nada foi guardado.</b><span class="xs muted">Para guardar estes custos, entre com o seu email e carregue a fatura outra vez.</span>${realBoxHTML()}</div>`
     :`<div class="acts" style="margin-top:16px"><button class="btn" data-act="real-cancel">Descartar</button><button class="btn green" data-act="real-confirm">Confirmar e guardar custos</button></div>
-    <p class="xs muted" style="margin-top:12px">Ao confirmar, os custos ficam guardados e a app aprende os nomes deste fornecedor. Da próxima vez lê sem perguntar.</p>`}</div>`;
+    <p class="xs muted" style="margin-top:12px">Toque na foto do produto certo. Só os produtos confirmados recebem sugestões de promoção; os outros ficam «por confirmar» nas Promoções. O que confirmar fica aprendido: da próxima vez a app já sabe.</p>`}</div>`;
 }
 ACT['real-cancel']=async()=>{const id=S.pending?.res?.fatura_id;S.pending=null;render();if(id){await REAL.sb.from('faturas').delete().eq('id',id);await loadFaturas();render()}};
 ACT['real-confirm']=async()=>{
@@ -1449,17 +1451,22 @@ ACT['real-confirm']=async()=>{
     }
     const {error}=await REAL.sb.rpc('confirmar_fatura',{p_fatura:pe.res.fatura_id});if(error)throw error;
     log(`Guardou a fatura real ${pe.res.cabecalho?.numero||''} (${ls.length} produtos)`);
-    // os produtos com preços da concorrência conhecidos passam logo para as promoções
-    let novos=0;const sem=[];
-    ls.forEach((l,i)=>{const custo=parseFloat(document.getElementById('rl-cost-'+i)?.value)||+l.custo_unit,c=associar(l.descricao);
-      if(!c||!(custo>0)){sem.push(l.descricao);return}
-      const item=Object.assign({},c,{cost:r2(custo),qty_:+l.quantidade,inv:pe.res.cabecalho?.numero||'fatura'}),ex=prod(c.id);
-      if(ex)Object.assign(ex,item);else{S.products.push(item);novos++}delete S.promos[c.id]});
+    // só os produtos confirmados pelo dono (ou já confirmados antes) passam para as promoções
+    let novos=0;const nif=pe.res.cabecalho?.nifFornecedor||'';S.porConfirmar=S.porConfirmar||[];
+    for(let i=0;i<ls.length;i++){
+      const l=ls[i],custo=parseFloat(document.getElementById('rl-cost-'+i)?.value)||+l.custo_unit,c=escolhido(pe,i);
+      if(!(custo>0))continue;
+      if(!c){const cs=pe.sug?.[i]?.candidatos||[];S.porConfirmar=S.porConfirmar.filter(x=>x.desc!==l.descricao);S.porConfirmar.push({desc:l.descricao,nif,custo:r2(custo),qtd:+l.quantidade,inv:pe.res.cabecalho?.numero||'fatura',candidatos:cs});continue}
+      REAL.sb.rpc('confirmar_produto',{p_desc:descNorm(l.descricao),p_nif:nif,p_marca:c.marca||'',p_produto:c.produto,p_tamanho:c.tamanho||'',p_imagem:c.imagem||'',p_ok:true}).then(()=>{});
+      if(adicionarConfirmado(c,{custo,qtd:+l.quantidade,inv:pe.res.cabecalho?.numero||'fatura'}))novos++;
+      S.porConfirmar=S.porConfirmar.filter(x=>x.desc!==l.descricao);
+    }
+    const sem=S.porConfirmar;
     S.carousel=null;S.reel=null;
     S.pending=null;await loadFaturas();
     if(S.products.length){S.tab='promos';S.feat=0}
     render();scrollTo(0,0);
-    toast(S.products.length?`${novos||ls.length-sem.length} produtos com promoção sugerida${sem.length?` · ${sem.length} sem preços da concorrência ainda`:''}`:'Custos guardados. Ainda sem preços da concorrência para estes produtos.');
+    toast(`Custos guardados · ${novos} produto${novos===1?'':'s'} confirmado${novos===1?'':'s'}${sem.length?` · ${sem.length} por confirmar nas Promoções`:''}`);
   }catch(e){toast('Erro ao guardar: '+e.message)}finally{REAL.busy=null}
 };
 function realListHTML(){
@@ -1527,7 +1534,7 @@ function compInfo(p){
   return {c,src};
 }
 function compEf(p){return compInfo(p).c}
-const titulo=s=>String(s||'').toLowerCase().replace(/(^|[\s/(])(\S)/g,(a,x,y)=>x+y.toUpperCase()).replace(/ (De|Da|Do|Das|Dos|E|Em|C|S|P)(?=[\s/])/g,m=>m.toLowerCase());
+const titulo=s=>/[a-zà-ú]/.test(String(s||''))?String(s):String(s||'').toLowerCase().replace(/(^|[\s/(])(\S)/g,(a,x,y)=>x+y.toUpperCase()).replace(/ (De|Da|Do|Das|Dos|E|Em|C|S|P)(?=[\s/])/g,m=>m.toLowerCase());
 function folhetoCardHTML(){
   if(!REAL.user||!S.products.length)return '';
   const av=S.products.map(p=>({p,f:folhetosDe(p)[0],min:suggest(p).min})).filter(x=>x.f).sort((a,b)=>(b.f.ativo-a.f.ativo)||(a.f.preco/a.min-b.f.preco/b.min));
@@ -1538,6 +1545,59 @@ function folhetoCardHTML(){
       <div class="xs" style="margin-top:3px;color:${pode?'var(--green-ink)':'var(--orange-ink)'}">${f.ativo?'':'<b>Aviso antecipado.</b> '}${pode?`Pode acompanhar: o seu mínimo com margem é ${eur(min)}.`:`Não compita neste: fica abaixo do seu mínimo (${eur(min)}). Promova outro produto${f.ativo?'':' nessa semana'}.`}</div></div></div>`}).join('')}</div>`
     :`<p class="small muted">${FOL.at?'Nenhum produto da loja aparece nos folhetos desta semana.':''}</p>`}</section>`;
 }
+/* ===== "É este produto?": candidatos com foto vindos dos sites; o dono confirma uma vez e fica aprendido ===== */
+const descNorm=d=>String(d||'').toLowerCase().replace(/\s+/g,' ').trim().slice(0,200);
+async function sugerirProdutos(pe){
+  if(!REAL.sb||!pe?.res?.linhas?.length||pe.res.local)return;
+  pe.sug=null;pe.esc={};
+  try{
+    const nif=pe.res.cabecalho?.nifFornecedor||'';
+    const {data,error}=await REAL.sb.functions.invoke('sugerir-produtos',{body:{linhas:pe.res.linhas.map(l=>({descricao:l.descricao,nif}))}});
+    if(error)throw error;
+    pe.sug=data.linhas||[];
+  }catch(e){pe.sug=pe.res.linhas.map(()=>({candidatos:[]}))}
+  if(S.pending===pe)render();
+}
+function escolhido(pe,i){const sg=pe.sug?.[i];if(!sg)return null;if(sg.conhecido&&pe.esc?.[i]!==-1)return sg.produto;const k=pe.esc?.[i];return k>=0?sg.candidatos?.[k]||null:null}
+function fotoCand(c,w){return c?.imagem?`<img src="${esc(c.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:${w}px;height:${w}px;object-fit:contain;background:#fff;border-radius:10px;flex:none" onerror="this.style.visibility='hidden'">`:`<span style="width:${w}px;height:${w}px;border-radius:10px;background:var(--line,#E5E7EB);flex:none"></span>`}
+function nomeCand(c){const n=String(c.produto||''),m=String(c.marca||'');return norm(n).includes(norm(m))||!m?n:n+' '+m}
+function candBtns(cs,sel,act,attrs){
+  return `<div style="display:flex;gap:8px;flex-wrap:wrap">${cs.map((c,k)=>`<button class="cand" data-act="${act}" ${attrs} data-k="${k}" aria-pressed="${sel===k}" style="display:flex;gap:8px;align-items:center;text-align:left;padding:6px 10px 6px 6px;border-radius:12px;border:2px solid ${sel===k?'var(--green,#16A34A)':'var(--line,#E5E7EB)'};background:${sel===k?'var(--green-soft,#ECFDF5)':'#fff'};max-width:230px;cursor:pointer">${fotoCand(c,52)}<span style="min-width:0"><b class="xs" style="display:block;line-height:1.25">${esc(nomeCand(c))}</b><span class="xs muted">${esc(c.tamanho?tamanhoBonito(c.tamanho):'')}</span></span></button>`).join('')}
+    <button class="btn sm" data-act="${act}" ${attrs} data-k="-1" aria-pressed="${sel===-1}" style="${sel===-1?'border-color:var(--orange,#F97316)':''}">Nenhum destes</button></div>`;
+}
+function escolhaHTML(pe,i){
+  const sg=pe.sug?.[i];
+  if(pe.sug==null)return `<span class="xs muted"><span class="spinner"></span> A procurar o produto…</span>`;
+  if(!sg)return '<span class="chip c-grey">Fica por confirmar</span>';
+  if(sg.conhecido&&pe.esc?.[i]!==-1)return `<div style="display:flex;gap:8px;align-items:center">${fotoCand(sg.produto,52)}<span><b class="xs" style="display:block">${esc(nomeCand(sg.produto))}</b><span class="chip c-green">${IC.check}Reconhecido</span> <button class="textlink xs" data-act="esc-prod" data-i="${i}" data-k="-1">não é</button></span></div>`;
+  const cs=sg.candidatos||[];
+  if(!cs.length)return '<span class="chip c-grey">Sem sugestões · fica por confirmar</span>';
+  return candBtns(cs,pe.esc?.[i],'esc-prod',`data-i="${i}"`);
+}
+ACT['esc-prod']=(id,el)=>{const pe=S.pending;if(!pe)return;const b=el||document.activeElement;const i=+b.dataset.i,k=+b.dataset.k;pe.esc=pe.esc||{};pe.esc[i]=pe.esc[i]===k&&k>=0?undefined:k;render()};
+const CAT_PAL={Frescos:['leite','iogurte','queijo','manteiga','fiambre','fruta','banana','maca','ovos','natas','presunto','carne','peixe','legume'],Bebidas:['agua','sumo','cerveja','vinho','refrigerante','cola','bebida','nectar'],Higiene:['detergente','lixivia','papel','champo','gel','sabonete','amaciador','pasta','dentes','limpa','fralda']};
+function categoria(t){t=norm(t);for(const c in CAT_PAL)if(CAT_PAL[c].some(w=>t.includes(w)))return c;return 'Mercearia'}
+function tamanhoBonito(t){const m=medida(t||'');if(!m)return String(t||'').replace(/^emb\.?\s*/i,'');if(m.d==='g')return m.v>=1000?String(m.v/1000).replace('.',',')+' kg':Math.round(m.v)+' g';if(m.d==='ml')return m.v>=1000?String(m.v/1000).replace('.',',')+' L':m.v%10===0?m.v/10+' cl':Math.round(m.v)+' ml';return m.v+' '+m.d}
+const LOJA_COMP={'continente':'continente','pingo doce':'pingo','auchan':'auchan'};
+function adicionarConfirmado(c,{custo,qtd,inv}){
+  const marca=c.marca||'',nome=nomeCand(c),qty=tamanhoBonito(c.tamanho);
+  const prodSem=String(c.produto||'').split(/\s+/).filter(w=>!norm(marca).split(' ').includes(norm(w))).join(' ')||c.produto;
+  const id='p-'+norm(marca+' '+prodSem+' '+qty).replace(/[^a-z0-9]+/g,'-').slice(0,60);
+  const comp={};const lk=LOJA_COMP[norm(c.loja)];if(lk&&c.preco>0)comp[lk]=+c.preco;   // preço visto ao procurar: serve já de referência
+  const ex=prod(id),item={id,name:titulo(nome),size:qty,prod:prodSem,qty,brand:marca,cat:categoria(nome),cost:r2(custo),qty_:qtd||0,inv,img:c.imagem||null,real:true,confirmado:true,comp:Object.assign({},ex?.comp||{},comp)};
+  if(ex){Object.assign(ex,item);return false}
+  S.products.push(item);delete S.promos[id];return true;
+}
+// produtos que ficaram por confirmar: aparecem nas Promoções para confirmar mais tarde
+function porConfirmarHTML(){
+  const pc=S.porConfirmar||[];if(!pc.length)return '';
+  return `<section class="card pad"><div class="card-h"><div><h2>Por confirmar</h2><span class="xs muted">Sem confirmação não há sugestões de promoção para estes produtos</span></div><span class="chip c-warn">${pc.length}</span></div>
+    <div class="list">${pc.map((x,j)=>`<div class="item" style="align-items:flex-start;flex-direction:column;gap:8px"><div><b>${esc(x.desc)}</b> <span class="xs muted">· custo ${eur(x.custo)} · ${esc(x.inv)}</span></div>${x.candidatos?.length?candBtns(x.candidatos,null,'pc-prod',`data-j="${j}"`):'<span class="xs muted">Sem sugestões dos sites para esta descrição.</span>'}</div>`).join('')}</div></section>`;
+}
+ACT['pc-prod']=(id,el)=>{const b=el||document.activeElement,j=+b.dataset.j,k=+b.dataset.k,x=(S.porConfirmar||[])[j];if(!x)return;
+  if(k>=0){const c=x.candidatos[k];REAL.sb?.rpc('confirmar_produto',{p_desc:descNorm(x.desc),p_nif:x.nif||'',p_marca:c.marca||'',p_produto:c.produto,p_tamanho:c.tamanho||'',p_imagem:c.imagem||'',p_ok:true}).then(()=>{});adicionarConfirmado(c,{custo:x.custo,qtd:x.qtd,inv:x.inv});toast('Confirmado: '+titulo(nomeCand(c)))}
+  else toast('Fica fora das promoções: '+x.desc);
+  S.porConfirmar.splice(j,1);render()};
 sbInit();
 if(S.pending&&S.pending.real&&S.pending.stage==='reading')S.pending=null;
 if(S.pending&&S.pending.stage==='reading')S.pending.stage='review';
