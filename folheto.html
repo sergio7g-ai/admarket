@@ -57,6 +57,17 @@ footer{text-align:center;color:var(--muted);font-size:.78rem;margin-top:26px}
   // inscrição: o cliente autoriza expressamente receber o folheto por WhatsApp
   const cons = `Autorizo o ${l.nome || 'supermercado'} a enviar-me o folheto de promoções por WhatsApp para este número. Posso cancelar a qualquer momento respondendo SAIR.`;
   document.getElementById('wa-cons').textContent = cons;
+  // Essencial e Crescer: botão para seguir o canal do WhatsApp da loja (grátis); Completo: inscrição para receber no telemóvel
+  if (!d.inscrever) {
+    if (d.canal && /^https:\/\/(www\.)?whatsapp\.com\/channel\//.test(d.canal)) {
+      const wa = document.getElementById('wa');
+      wa.innerHTML = '<h2>Siga a loja no WhatsApp</h2><p>Veja o folheto novo todas as semanas no canal da loja. É grátis e pode deixar de seguir quando quiser.</p>';
+      const a = document.createElement('a'); a.href = d.canal; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Seguir o canal';
+      a.style.cssText = 'display:block;text-align:center;margin-top:6px;border-radius:12px;padding:14px;font:700 1rem Inter,sans-serif;background:#16A34A;color:#fff;text-decoration:none';
+      wa.appendChild(a); wa.hidden = false;
+    }
+    return;
+  }
   document.getElementById('wa').hidden = false;
   document.getElementById('wa-form').addEventListener('submit', async e => {
     e.preventDefault();

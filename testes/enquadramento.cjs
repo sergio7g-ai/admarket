@@ -16,7 +16,7 @@ const LONGOS = [
 ];
 (async () => {
   const b = await chromium.launch(); let falhas = 0, total = 0, ajustadas = 0;
-  for (const [nome, vp] of [['computador', { width: 1280, height: 1800 }], ['telemovel', { width: 390, height: 1800 }]]) {
+  for (const [nome, vp, plano] of [['computador', { width: 1280, height: 1800 }, 'Completo'], ['telemovel', { width: 390, height: 1800 }, 'Completo'], ['telemovel-essencial', { width: 390, height: 1800 }, 'Essencial']]) {
     const pg = await b.newPage({ viewport: vp, deviceScaleFactor: 1 });
     const erros = []; pg.on('pageerror', e => erros.push(e.message));
     await pg.route(/supabase-js/, r => r.fulfill({ body: STUB, contentType: 'application/javascript' }));
@@ -31,10 +31,10 @@ const LONGOS = [
     // repor a demonstração primeiro para ter os produtos de exemplo e depois aplicar o estado de teste
     await pg.evaluate(() => { const b = document.querySelector('[data-act="reset"]'); b && b.click(); });
     await pg.waitForTimeout(300);
-    await pg.evaluate(L => { for (const k of Object.keys(localStorage)) { try { const o = JSON.parse(localStorage.getItem(k)); if (o && o.v === 6) {
-      o.tab = 'posts'; o.view = 'owner'; o.products = o.products.concat(L.filter(x => !o.products.some(p => p.id === x.id)));
+    await pg.evaluate(([L, plano]) => { for (const k of Object.keys(localStorage)) { try { const o = JSON.parse(localStorage.getItem(k)); if (o && o.v === 6) {
+      o.store.plan = plano; o.tab = 'posts'; o.view = 'owner'; o.products = o.products.concat(L.filter(x => !o.products.some(p => p.id === x.id)));
       o.promos = {}; for (const p of o.products) o.promos[p.id] = { status: 'approved', at: new Date().toISOString(), choice: null, sched: null, clients: 0 };
-      o.store.name = 'Supermercado Nossa Senhora da Conceição'; localStorage.setItem(k, JSON.stringify(o)); } } catch (e) {} } }, LONGOS);
+      o.store.name = 'Supermercado Nossa Senhora da Conceição'; localStorage.setItem(k, JSON.stringify(o)); } } catch (e) {} } }, [LONGOS, plano]);
     await pg.reload(); await pg.waitForTimeout(1200);
     const r = await pg.evaluate(() => [...document.querySelectorAll('.post,.reel .scene')].map((p, i) => ({ i, e: p.dataset.enquadrado || 'sem-zonas', t: (p.innerText || '').replace(/\s+/g, ' ').slice(0, 60) })));
     // a marca nunca pode faltar no nome usado nas publicações
@@ -45,6 +45,11 @@ const LONGOS = [
       return out; }, LONGOS);
     for (const x of semMarca) console.log('   ✗ sem marca:', x);
     falhas += semMarca.length;
+    // as publicações nunca falam da concorrência
+    const proibidas = await pg.evaluate(() => [...document.querySelectorAll('.post,.reel .scene')].map(p => p.innerText || '').filter(t => /grandes (cadeias|superf)|mais barat|concorr|continente|pingo doce|auchan|lidl|intermarch/i.test(t)).map(t => t.replace(/\s+/g, ' ').slice(0, 80)));
+    for (const x of proibidas) console.log('   ✗ fala da concorrência:', x);
+    falhas += proibidas.length;
+    if (plano === 'Essencial') { const ex = await pg.evaluate(() => ({ carrossel: !!document.querySelector('.ctrack'), reel: !!document.querySelector('.reel') })); if (ex.carrossel || ex.reel) { console.log('   ✗ Essencial mostra carrossel/reels'); falhas++; } }
     const f = r.filter(x => x.e === 'falha');
     total += r.length; falhas += f.length; ajustadas += r.filter(x => x.e === 'ajustado').length;
     console.log(`${nome}: ${r.length} publicações · ${r.filter(x => x.e === 'ok').length} ok · ${r.filter(x => x.e === 'ajustado').length} ajustadas · ${f.length} com problema${erros.length ? ' · ERROS JS: ' + erros.join(' | ') : ''}`);

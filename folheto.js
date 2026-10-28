@@ -131,8 +131,8 @@
       <div style="position:absolute;left:7cqw;right:7cqw;top:12cqw"><div style="font:800 13cqw/.95 var(--fbh);letter-spacing:-.05em;text-transform:uppercase">Até já!</div>
         <div style="font:500 4cqw/1.4 var(--fbu);margin-top:4cqw;opacity:.92">Promoções válidas de ${per}, limitadas ao stock existente. Imagens meramente ilustrativas.</div></div>
       <div style="position:absolute;left:7cqw;right:7cqw;top:62cqw;background:#fff;color:#0F172A;border-radius:3cqw;padding:5cqw;box-shadow:0 2cqw 5cqw rgba(0,0,0,.18)">
-        <div style="font:800 5.2cqw/1.15 var(--fbh)">Receba o folheto no WhatsApp</div>
-        <div style="font:500 3.3cqw/1.45 var(--fbu);color:#475569;margin-top:2cqw">${d.inscrever ? 'Abra o link do folheto nas nossas redes e toque em «Quero receber». Só enviamos o folheto da semana e pode cancelar quando quiser.' : 'Peça na caixa para receber o folheto da semana.'}</div></div>
+        <div style="font:800 5.2cqw/1.15 var(--fbh)">${d.inscrever ? 'Receba o folheto no WhatsApp' : d.canal ? 'Siga a loja no WhatsApp' : 'O folheto todas as semanas'}</div>
+        <div style="font:500 3.3cqw/1.45 var(--fbu);color:#475569;margin-top:2cqw">${d.inscrever ? 'Abra o link do folheto nas nossas redes e toque em «Quero receber». Só enviamos o folheto da semana e pode cancelar quando quiser.' : d.canal ? 'Siga o canal da loja no WhatsApp e veja o folheto novo todas as semanas. É grátis.' : 'Siga a loja nas redes sociais e veja o folheto novo todas as semanas.'}</div></div>
       <div style="position:absolute;left:7cqw;right:7cqw;bottom:9cqw;display:flex;align-items:center;gap:3cqw;color:${i2}">${logoHTML(l, '#fff', c1)}<div><div style="font:800 4.4cqw/1.15 var(--fbh)">${esc(l.nome)}</div><div style="font:500 3cqw var(--fbu);opacity:.9">${esc([l.morada, l.cidade].filter(Boolean).join(' · '))}${l.ig ? ' · ' + esc(l.ig) : ''}</div></div></div></div>`);
     return pags;
   }
