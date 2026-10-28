@@ -1,0 +1,170 @@
+{
+ "A": {
+  "nif": "509732143",
+  "total": 260.5,
+  "linhas": [
+   {
+    "descricao": "Leite UHT Meio Gordo Agros 1L",
+    "qtd": 72,
+    "un": "UN",
+    "custo_unit_linha": 0.59,
+    "custo_unit_real": 0.5772,
+    "total_linha": 42.41
+   },
+   {
+    "descricao": "Queijo Flamengo Fatiado Limiano 200g",
+    "qtd": 24,
+    "un": "UN",
+    "custo_unit_linha": 1.81,
+    "custo_unit_real": 1.7781,
+    "total_linha": 43.55
+   },
+   {
+    "descricao": "Queijo da Serra Amanteigado (peso variável)",
+    "qtd": 2.35,
+    "un": "KG",
+    "custo_unit_linha": 14.9,
+    "custo_unit_real": 14.602,
+    "total_linha": 35.02
+   },
+   {
+    "descricao": "Iogurte Grego Natural Oikos 4x110g",
+    "qtd": 18,
+    "un": "UN",
+    "custo_unit_linha": 1.72,
+    "custo_unit_real": 1.6856,
+    "total_linha": 30.96
+   },
+   {
+    "descricao": "Manteiga com Sal Mimosa 250g",
+    "qtd": 20,
+    "un": "UN",
+    "custo_unit_linha": 1.61,
+    "custo_unit_real": 1.5766,
+    "total_linha": 32.18
+   },
+   {
+    "descricao": "Fiambre da Perna Extra Nobre (peso variável)",
+    "qtd": 1.84,
+    "un": "KG",
+    "custo_unit_linha": 7.95,
+    "custo_unit_real": 7.791,
+    "total_linha": 14.63
+   },
+   {
+    "descricao": "Natas para Culinária Mimosa 200ml",
+    "qtd": 24,
+    "un": "UN",
+    "custo_unit_linha": 0.71,
+    "custo_unit_real": 0.6958,
+    "total_linha": 17.04
+   },
+   {
+    "descricao": "Ovos Classe M Dúzia Cat. A",
+    "qtd": 15,
+    "un": "UN",
+    "custo_unit_linha": 2.15,
+    "custo_unit_real": 2.107,
+    "total_linha": 32.25
+   }
+  ],
+  "qr": "A:509732143*B:512987653*C:PT*D:FT*E:N*F:20261026*G:FT 2026A/88412*H:KX7RT2PB-88412*I1:PT*I3:226.38*I4:13.58*I7:16.70*I8:3.84*N:17.42*O:260.50*Q:Tst1*R:0000"
+ },
+ "B": {
+  "nif": "514682035",
+  "total": 376.04,
+  "linhas": [
+   {
+    "descricao": "AGUA MINERAL LUSO 1,5L",
+    "ean": "5601234567892",
+    "embalagens": 10,
+    "un_por_emb": 6,
+    "unidades": 60,
+    "custo_emb": 2.34,
+    "custo_unit_real": 0.39,
+    "total_linha": 23.4
+   },
+   {
+    "descricao": "CERVEJA SUPER BOCK MINI 25CL",
+    "ean": "5601234004519",
+    "embalagens": 4,
+    "un_por_emb": 24,
+    "unidades": 96,
+    "custo_emb": 13.41,
+    "custo_unit_real": 0.5586,
+    "total_linha": 53.63
+   },
+   {
+    "descricao": "VINHO TINTO MONTE VELHO 75CL",
+    "ean": "5601234120301",
+    "embalagens": 2,
+    "un_por_emb": 6,
+    "unidades": 12,
+    "custo_emb": 21.9,
+    "custo_unit_real": 3.65,
+    "total_linha": 43.8
+   },
+   {
+    "descricao": "SUMO COMPAL LARANJA 1L",
+    "ean": "5601234130003",
+    "embalagens": 3,
+    "un_por_emb": 12,
+    "unidades": 36,
+    "custo_emb": 12.69,
+    "custo_unit_real": 1.0573,
+    "total_linha": 38.06
+   },
+   {
+    "descricao": "ARROZ CAROLINO CIGALA 1KG",
+    "ean": "5601234140224",
+    "embalagens": 5,
+    "un_por_emb": 10,
+    "unidades": 50,
+    "custo_emb": 9.8,
+    "custo_unit_real": 0.98,
+    "total_linha": 49.0
+   },
+   {
+    "descricao": "OLEO ALIMENTAR FULA 1L",
+    "ean": "5601234150094",
+    "embalagens": 2,
+    "un_por_emb": 12,
+    "unidades": 24,
+    "custo_emb": 21.77,
+    "custo_unit_real": 1.8144,
+    "total_linha": 43.55
+   },
+   {
+    "descricao": "PAPEL HIG. RENOVA 12 ROLOS",
+    "ean": "5601234160444",
+    "embalagens": 3,
+    "un_por_emb": 4,
+    "unidades": 12,
+    "custo_emb": 15.6,
+    "custo_unit_real": 3.9,
+    "total_linha": 46.8
+   },
+   {
+    "descricao": "DETERG. LOICA FAIRY 1L",
+    "ean": "5601234170016",
+    "embalagens": 1,
+    "un_por_emb": 12,
+    "unidades": 12,
+    "custo_emb": 21.06,
+    "custo_unit_real": 1.755,
+    "total_linha": 21.06
+   },
+   {
+    "descricao": "ARROZ CAROLINO CIGALA 1KG (OFERTA)",
+    "ean": "5601234140224",
+    "embalagens": 2,
+    "un_por_emb": 1,
+    "unidades": 2,
+    "custo_emb": 0.0,
+    "custo_unit_real": 0.0,
+    "total_linha": 0.0
+   }
+  ],
+  "qr": "A:514682035*B:512987653*C:PT*D:FT*E:N*F:20261027*G:FN26/004517*H:JPQ3MZ8V-4517*I1:PT*I3:72.40*I4:4.34*I5:43.80*I6:5.69*I7:203.10*I8:46.71*N:56.74*O:376.04*Q:Tst1*R:0000"
+ }
+}
