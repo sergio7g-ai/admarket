@@ -1486,9 +1486,9 @@ async function ensureFolhetos(){
   catch(e){}finally{FOL.busy=false}
 }
 function medida(t){
-  t=norm(t).replace(/(\d),(\d)/g,'$1.$2');let m=t.match(/(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*(kg|g|ml|cl|lt|l)\b/),n,u;
-  if(m){n=m[1]*m[2];u=m[3]}else{m=t.match(/(\d+(?:\.\d+)?)\s*(kg|g|ml|cl|lt|l|un|unid|doses|capsulas|rolos)\b/);if(!m)return null;n=+m[1];u=m[2]}
-  const f={kg:1000,g:1,l:1000,lt:1000,cl:10,ml:1}[u];return f?{v:n*f,d:(u==='kg'||u==='g')?'g':'ml'}:{v:n,d:u.startsWith('un')?'un':u}
+  t=norm(t).replace(/(\d),(\d)/g,'$1.$2');let m=t.match(/(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*(kg|gr|g|ml|cl|lt|l)\b/),n,u;
+  if(m){n=m[1]*m[2];u=m[3]}else{m=t.match(/(\d+(?:\.\d+)?)\s*(kg|gr|g|ml|cl|lt|l|un|unid|doses|capsulas|rolos)\b/);if(!m)return null;n=+m[1];u=m[2]}
+  const f={kg:1000,gr:1,g:1,l:1000,lt:1000,cl:10,ml:1}[u];return f?{v:n*f,d:(u==='kg'||u==='g'||u==='gr')?'g':'ml'}:{v:n,d:u.startsWith('un')?'un':u}
 }
 const QUALIF=['lactose','proteina','cacau','chocolate','bio','light','zero','descafeinado','soluvel','capsulas','grao','integral','acucar','spray','pack'],QUALIF_VAR=['magro','gordo'];
 function folhetoCombina(p,f){
