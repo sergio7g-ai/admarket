@@ -588,7 +588,26 @@ function avatar(size){const s=S.store;return s.logo?`<span class="avatar" style=
 const ENCHIMENTO=new Set(['super','ultra','extra','mega','concentrado','perfumado','cremoso','suave','original','classico','clássico','tradicional','premium','gourmet','especial','selecao','seleção','qualidade','pack','poupanca','poupança','familiar','familia','família','formato','embalagem','maquina','máquina','barra','tubo','garrafa','lata','frasco','saco','caixa','unidade','unidades','und','emb']);
 const MANTER_COM=new Set(['virgem','gordo','meio','magro','sem','com','zero']);   // "virgem extra", "meio gordo", "sem lactose"
 const LIGACAO=new Set(['de','da','do','das','dos','e','com','para','em','ao','à','a','o']);
-function nomeCurto(n,max=24){
+// a marca nunca cai: sai do meio do nome, o resto encurta-se e a marca volta no fim, inteira
+function nomeComMarca(n,marca){
+  n=String(n||'').replace(/\s+/g,' ').trim();marca=String(marca||'').replace(/\s+/g,' ').trim();
+  const f=w=>w.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const ws=n.split(' '),mb=marca.split(' ').map(f);let i0=-1;
+  for(let i=0;i+mb.length<=ws.length;i++)if(mb.every((m,j)=>f(ws[i+j])===m)){i0=i;break}
+  const mostrar=i0>=0?ws.slice(i0,i0+mb.length).join(' '):(typeof titulo==='function'?titulo(marca):marca);
+  const resto=i0>=0?[...ws.slice(0,i0),...ws.slice(i0+mb.length)].join(' '):n;
+  if(n.length<=24&&i0>=0)return n;
+  const desc=nomeCurto(resto,null,Math.max(12,30-mostrar.length-1));
+  return desc?desc+' '+mostrar:mostrar;
+}
+function marcaDe(p){
+  if(p.brand&&String(p.brand).trim().length>=2)return p.brand;
+  const nn=' '+norm(p.name)+' ';let best='';
+  for(const q of S.products||[])if(q.brand&&q.brand.length>best.length&&nn.includes(' '+norm(q.brand)+' '))best=q.brand;
+  return best;
+}
+function nomeCurto(n,marca,max=24){
+  if(marca)return nomeComMarca(n,marca);
   n=String(n||'').replace(/\s+/g,' ').trim();if(n.length<=max)return n;
   const ws=n.split(' '),fora=w=>w.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   // tira enchimento, mas nunca a 1.ª palavra (o que é o produto) nem a palavra a seguir a "virgem", "meio", "sem"…
@@ -605,7 +624,7 @@ function nomeCurto(n,max=24){
   }
   return idx.map(i=>k[i]).join(' ');
 }
-const nomePost=p=>(S.nomesPost&&S.nomesPost[p.name])||nomeCurto(p.name);
+const nomePost=p=>(S.nomesPost&&S.nomesPost[p.name])||nomeCurto(p.name,marcaDe(p));
 function postHTML(p,style){
   if(!PHOTOS[p.id])return postIllustrated(p,style);
   const s=S.store,c1=s.c1,c2=s.c2,i1=ink(c1),i2=ink(c2),sg=suggest(p),cd=code(p),pc=i1==='#FFFFFF'?c1:'#0F172A';
@@ -1353,7 +1372,7 @@ document.addEventListener('change',e=>{
   const t=e.target;
   if(t.id==='inv-photo'||t.id==='inv-pdf'){readInvoiceFile(t.files[0]);t.value='';return}
   if(t.id==='cfg-logo'&&t.files[0]){shrink(t.files[0],160).then(url=>{S.store.logo=url;const cols=extractColors(shrink.last);if(cols){S.store.c1=cols[0];if(cols[1])S.store.c2=cols[1]}render();toast('Logótipo carregado e cores atualizadas')}).catch(()=>toast('Não foi possível ler esta imagem. Experimente um PNG ou JPG.'));return}
-  if(t.dataset.nomePost!=null){S.nomesPost=S.nomesPost||{};const v=t.value.replace(/\s+/g,' ').trim();if(v&&v!==nomeCurto(t.dataset.nomePost))S.nomesPost[t.dataset.nomePost]=v;else delete S.nomesPost[t.dataset.nomePost];save();render();return}
+  if(t.dataset.nomePost!=null){S.nomesPost=S.nomesPost||{};const v=t.value.replace(/\s+/g,' ').trim();const pq=S.products.find(q=>q.name===t.dataset.nomePost)||{name:t.dataset.nomePost};if(v&&v!==nomeCurto(pq.name,marcaDe(pq)))S.nomesPost[t.dataset.nomePost]=v;else delete S.nomesPost[t.dataset.nomePost];save();render();return}
   if(t.dataset.cfg){S.store[t.dataset.cfg]=t.value;render();return}
   if(t.dataset.margin){const v=Math.max(0,Math.min(80,parseInt(t.value)||0));S.margins[t.dataset.margin]=v;render();toast(`Margem de ${t.dataset.margin.toLowerCase()}: ${v}%`)}
 });
