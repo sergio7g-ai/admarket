@@ -23,6 +23,7 @@ export function num(s) {
   const n = parseFloat(s);
   return Number.isFinite(n) ? n : null;
 }
+const norm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const perto = (a, b) => Math.abs(a - b) <= Math.max(0.02, b * 0.006);
 
 // separa a linha em descrição + números finais
@@ -32,6 +33,8 @@ const limpaNum = x => x.replace(/^[-–.:]+|[-–.:]+$/g, '').replace('%', '');
 function partir(linha) {
   const t = linha.replace(/[€|\[\]]/g, ' ').replace(/(\d)(un|uni|cx|emb)\b/gi, '$1 $2').replace(/^(\d{11,13}) (\d{1,2}) /, '$1$2 ').replace(/(\d) ,(\d)/g, '$1,$2')
     .replace(/(\s\d{1,4}), (\d{2})(?=\s|$)/g, '$1,$2')                     // "15, 60" (OCR separou os cêntimos)
+    .replace(/\s[Il|](cx|fd|emb)\b/gi, ' 1 $1')                       // "1 CX" lido "ICX"
+    .replace(/(^|\s)[eE],(\d{2})(?=\s|$)/g, '$10,$2')                         // "0,00" lido "e,00"
     .replace(/(\s\d{1,4}) (\d{2})\s*$/, '$1,$2').trim().split(/\s+/)
     .map(x => /^[OQDo]{1,2}$/.test(x) ? '0' : /^[DOQ]\d{2,}$/.test(x) ? '0' + x.slice(1)
       : /^[\dOolI.,%]+$/.test(x) && /\d/.test(x) ? x.replace(/[Oo]/g, '0').replace(/[lI]/g, '1') : x); // erros típicos de OCR
@@ -206,6 +209,7 @@ function fixarDesconto(l) {
   }
   return l;
 }
+const OFERTA = /\b(oferta|b[oó]nus|gr[aá]tis|oferecid[oa]s?)\b/i;
 const RESUMO = /^(iva|taxa|total|sub-?total|incid[eê]ncia|base|desconto|desc\.|portes|transporte|ecovalor|valor|resumo|n\.?º)\b/i;
 // desconto no fim da fatura (financeiro, comercial, pronto pagamento, global) em percentagem
 function descontoGlobal(texto) {
@@ -218,7 +222,8 @@ function descontoGlobal(texto) {
 export function lerLinhas(texto, modelo, qr = null) {
   const ctx = { unEmb: /\bun(?:id)?\.?\s*\/\s*(?:emb|cx)\b|\buni\/emb\b|\bun\.?\s*emb\b/i.test(texto) };
   const todas = texto.split(/\r?\n/).map(partir).filter(p => !RESUMO.test(p.desc));
-  const partes = todas.filter(p => p.desc.length > 2 && (p.nums.length >= 3 || (p.ean && p.nums.length >= 2)));
+  const ofertas = todas.filter(p => OFERTA.test(p.desc));
+  const partes = todas.filter(p => !OFERTA.test(p.desc) && p.desc.length > 2 && (p.nums.length >= 3 || (p.ean && p.nums.length >= 2)));
   let usado = modelo, metodo = 'modelo';
   if (!usado) {
     const votos = {};
@@ -240,12 +245,17 @@ export function lerLinhas(texto, modelo, qr = null) {
       linhas.splice(res.indexOf(null) >= 0 ? res.slice(0, partes.indexOf(p)).filter(Boolean).length : linhas.length, 0,
         { ean: p.ean, descricao: p.desc, quantidade: q, preco_unit: pr, desconto_pct: d, iva_pct: null, total: falta });
   }
-  // ofertas (linha a 0,00 do mesmo produto): as unidades oferecidas baixam o custo médio da linha paga
-  for (const p of partes) {
-    const v = p.nums.map(num);
-    if (!p.ean || v[v.length - 1] !== 0 && !(v.length >= 2 && v[v.length - 2] === 0 && IVAS.includes(v[v.length - 1]))) continue;
-    const l = linhas.find(x => x.ean === p.ean && x.total > 0); if (!l) continue;
-    const q = v.find(x => Number.isInteger(x) && x > 0 && !IVAS.includes(x)) ?? v.find(x => Number.isInteger(x) && x > 0);
+  // ofertas (linha a 0,00 do mesmo produto, ou com «oferta/bónus/grátis»): as unidades oferecidas baixam o custo médio da linha paga.
+  // Nunca entram como produto à parte (seriam um produto com custo 0).
+  const semOferta = d => norm(d).replace(OFERTA, '').replace(/[()\[\]]/g, ' ').replace(/\s+/g, ' ').trim();
+  const zeros = partes.filter(p => { const v = p.nums.map(num); return p.ean && (v[v.length - 1] === 0 || (v.length >= 2 && v[v.length - 2] === 0 && IVAS.includes(v[v.length - 1]))); });
+  for (const p of [...ofertas, ...zeros]) {
+    const alvo = semOferta(p.desc);
+    const l = linhas.find(x => x.total > 0 && ((p.ean && x.ean === p.ean) || semOferta(x.descricao) === alvo || (alvo.length > 8 && semOferta(x.descricao).startsWith(alvo.split(' ').slice(0, 3).join(' ')))));
+    if (!l) continue;
+    const v = p.nums.map(num).filter(x => x != null);
+    let q = v.find(x => Number.isInteger(x) && x > 0 && !IVAS.includes(x)) ?? v.find(x => Number.isInteger(x) && x > 0);
+    if (!q) { const m = p.desc.match(/\b(?:un|uni|und)\.?\s+(\d{1,3})\b/i); q = m ? +m[1] : null; }
     if (!q) continue;
     const u = v.find((x, i) => i > v.indexOf(q) && Number.isInteger(x) && x >= 1 && x <= 500 && v[i + 1] === 0) ?? 1;
     const novo = l.quantidade + q * u;
@@ -260,12 +270,13 @@ export function lerLinhas(texto, modelo, qr = null) {
   // produtos com código de barras que não bateram: entram como "a confirmar" com a melhor estimativa
   const vistos = new Set(linhas.map(l => l.ean).filter(Boolean));
   for (const p of todas) {
-    if (!/^(\d{8}|\d{12,14})$/.test(p.ean || '') || vistos.has(p.ean) || !/[a-zà-ú]{3,}/i.test(p.desc)) continue;
+    if (!/^(\d{8}|\d{12,14})$/.test(p.ean || '') || vistos.has(p.ean) || !/[a-zà-ú]{3,}/i.test(p.desc) || OFERTA.test(p.desc)) continue;
     const v = p.nums.map(num).filter(x => x != null);
     const q = v.find(x => Number.isInteger(x) && x > 0 && x < 1000) ?? 1;
     const tot = v.length >= 2 && !Number.isInteger(v[v.length - 1]) ? v[v.length - 1] : null;
     const outro = v.slice(0, tot != null ? -1 : undefined).find(x => !Number.isInteger(x) && x > 0);
     const pr = outro ?? (tot != null && q > 0 ? Math.round(tot / q * 10000) / 10000 : 0);
+    if (!(pr > 0)) continue;     // sem preço (ex.: linha a 0,00) não é um custo
     linhas.push({ ean: p.ean, descricao: p.desc, quantidade: q, preco_unit: pr, desconto_pct: 0, iva_pct: null, total: tot ?? Math.round(q * pr * 100) / 100, incerta: true });
     vistos.add(p.ean);
   }

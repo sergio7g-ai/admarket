@@ -28,6 +28,12 @@ const casos = [
   ['Lactibeira · foto', fs.readFileSync(F('lactibeira-foto.ocr.txt'), 'utf8'), esperado.A.qr, LACT],
   ['Cash & Carry · PDF', pdf('cashcarry').texto, pdf('cashcarry').qr, CASH],
   ['Cash & Carry · foto', fs.readFileSync(F('cashcarry-foto.ocr.txt'), 'utf8'), esperado.B.qr, CASH_FOTO],
+  // linhas tal como o OCR as leu na foto real do Sérgio (28/10): "1 CX" lido "ICX", "0,00" lido "e,00", EAN da oferta trocado
+  ['Foto real (OCR com erros)', ['Ret. EAN Designação Emb Qtd Un/Emb P. Emb D1% D2% Líquido IVA',
+    '140221 5601234140224 ARROZ CAROLINO CIGALA 1KG FD 10 9,80 49,00',
+    '170012 5601234170016 DETERG. LOICA FAIRY 1L ICX 12 23,40 10,0 21,06 23',
+    '140221 5601234140229 ARROZ CAROLINO CIGALA 1KG (OFERTA) UN 2 0,00 e,00'].join('\n'), null,
+    [['ARROZ CAROLINO CIGALA 1KG', 52, 0.9423], ['DETERG. LOICA FAIRY 1L', 12, 1.755]]],
 ];
 const norm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 let falhas = 0;
@@ -46,7 +52,7 @@ for (const [nome, texto, qrTxt, esp] of casos) {
   }
   const lixo = ls.filter(l => !esp.some(([n]) => norm(l.descricao).includes(norm(n))));
   for (const l of lixo) prob.push(`linha a mais: «${l.descricao}»`);
-  const sujas = ls.filter(l => /^(LB-\d|\d{5,7}\s)/.test(l.descricao));
+  const sujas = ls.filter(l => /^(LB-\d|\d{5,7}\s)|\bICX\b|\b0,00\b/.test(l.descricao));
   for (const l of sujas) prob.push(`código interno na descrição: «${l.descricao}»`);
   const v = bate(ls, qr);
   console.log(`${prob.length ? '✗' : '✓'} ${nome}: ${ls.length} linhas · QR ${v === true ? 'confere' : v === false ? 'NÃO confere' : 'sem QR'}`);

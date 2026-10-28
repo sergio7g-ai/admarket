@@ -1557,6 +1557,16 @@ async function qrDe(canvas){
   const r=jsQR(d.data,d.width,d.height,{inversionAttempts:'dontInvert'});
   return r&&r.data.includes('A:')?r.data:null;
 }
+// nas fotos o QR é pequeno, torto ou com reflexos: procura na imagem inteira e depois em zonas ampliadas
+// (o QR das faturas costuma estar em baixo), também numa versão a preto e branco
+async function qrFoto(big){
+  let q=await qrDe(big);if(q)return q;
+  const W=big.width,H=big.height,zonas=[[0,.5,1,.5],[0,.55,.55,.45],[.45,.55,.55,.45],[0,0,1,.5],[0,.3,1,.4]];
+  for(const bin of [false,true])for(const [x,y,w,h] of zonas){
+    const sw=W*w,sh=H*h,k=Math.min(2.5,1600/Math.max(sw,sh)),c=document.createElement('canvas');c.width=Math.round(sw*k);c.height=Math.round(sh*k);
+    const g=c.getContext('2d');g.imageSmoothingEnabled=true;g.drawImage(big,W*x,H*y,sw,sh,0,0,c.width,c.height);
+    q=await qrDe(bin?prepOCR(c):c);if(q)return q}
+  return null}
 /* limpa a foto: cinzento + limiar adaptativo (aguenta sombras e luz desigual) */
 function prepOCR(src){const W=src.width,H=src.height,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.filter='grayscale(1) blur(1px)';x.drawImage(src,0,0);const im=x.getImageData(0,0,W,H),d=im.data,g=new Float64Array((W+1)*(H+1));
   for(let y=0;y<H;y++){let s=0;for(let X=0;X<W;X++){s+=d[(y*W+X)*4];g[(y+1)*(W+1)+X+1]=g[y*(W+1)+X+1]+s}}
@@ -1597,7 +1607,7 @@ async function lerFaturaReal(file,info){
     else{
       step('A procurar o código QR…');
       const big=await imgCanvas(file,2400);
-      body.qr=await qrDe(big);
+      body.qr=await qrFoto(big);
       if(!REAL.user){step('A ler o texto da foto…');try{body.texto=await ocr(big,p=>step('A ler o texto da foto… '+p+'%'))}catch(_){}}
       const c=await imgCanvas(file,1600);           // a IA lê esta cópia reduzida: menos dados, menos tokens
       body.imagem_b64=c.toDataURL('image/jpeg',.85).split(',')[1];body.media_type='image/jpeg';
