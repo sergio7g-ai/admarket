@@ -9,7 +9,7 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-region',
 };
 const ACTOR = 'trovevault~portugal-supermarket-prices';
-const MAX_LINHAS = 40, PARALELO = 6;
+const MAX_LINHAS = 40, PARALELO = 4;   // o plano grátis do Apify limita corridas em simultâneo
 
 export const descNorm = (d: string) => String(d || '').toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 200);
 const norm = (t: unknown) => String(t ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -43,14 +43,24 @@ function medida(t: string) {
   const f: Record<string, number> = { kg: 1000, gr: 1, g: 1, l: 1000, lt: 1000, cl: 10, ml: 1 };
   return { v: n * f[u], d: (u === 'kg' || u === 'g' || u === 'gr') ? 'g' : 'ml' };
 }
-function pontua(it: any, desc: string, kw: string) {
-  const nome = norm(it.productName + ' ' + (it.brand || ''));
+const VAZIAS = new Set(['de', 'da', 'do', 'das', 'dos', 'com', 'ao', 'em', 'para', 'pack', 'emb', 'und', 'uni', 'gr', 'kg', 'cl', 'ml', 'lt']);
+// pontuação de um candidato (formato {produto, marca, tamanho}) para a descrição da fatura:
+// +2 por cada palavra da fatura que aparece, -1 por cada palavra a mais no candidato ("oro", "picante", "sem lactose"), ±tamanho
+function pontua(c: any, desc: string, kw: string) {
+  const marca = norm(c.marca), nome = norm(c.produto + ' ' + (c.marca || ''));
+  const alvo = norm(desc) + ' ' + kw;
   const ws = kw.split(' ').filter(w => w.length > 2);
-  let s = ws.filter(w => nome.includes(w.slice(0, 5))).length;
-  const sd = medida(desc), si = medida(it.packageSize || it.productName);
-  if (sd && si) { if (sd.d !== si.d || Math.abs(sd.v - si.v) / sd.v > 0.05) s -= 3; else s += 2; }
+  let s = 2 * ws.filter(w => nome.includes(w.slice(0, 5))).length;
+  const extra = norm(c.produto).split(/[^a-z0-9]+/).filter(w => w.length >= 3 && !/\d/.test(w) && !VAZIAS.has(w) && !marca.includes(w) && !alvo.includes(w.slice(0, 5)));
+  s -= extra.length;
+  const sd = medida(desc), si = medida(c.tamanho || c.produto);
+  if (sd && si) { if (sd.d !== si.d || Math.abs(sd.v - si.v) / sd.v > 0.05) s -= 4; else s += 3; }
   return s;
 }
+const melhores = (cands: any[], desc: string) => {
+  const kw = palavrasChave(desc);
+  return cands.map(c => ({ c, s: pontua(c, desc, kw) })).filter(x => x.s > 0).sort((a, b) => b.s - a.s).slice(0, 3).map(x => x.c);
+};
 
 async function procurar(token: string, desc: string) {
   const kw = palavrasChave(desc);
@@ -60,14 +70,17 @@ async function procurar(token: string, desc: string) {
   if (!r.ok) throw new Error(`Apify HTTP ${r.status}`);
   const itens = await r.json() as any[];
   const vistos = new Set<string>(), out: any[] = [];
-  for (const it of (itens || []).map(it => ({ it, s: pontua(it, desc, kw) })).sort((a, b) => b.s - a.s)) {
-    if (it.s < 1) continue;
-    const x = it.it, k = norm(x.productName) + '|' + norm(x.packageSize);
+  for (const x of itens || []) {
+    const k = norm(x.productName) + '|' + norm(x.packageSize);
     if (vistos.has(k)) continue; vistos.add(k);
     out.push({ marca: x.brand || null, produto: x.productName, tamanho: x.packageSize || null, imagem: x.imageUrl || null, preco: x.discountPrice || x.price || null, loja: x.supermarket });
-    if (out.length === 3) break;
   }
-  return out;
+  return out;   // guardam-se todos (até 10); a ordenação faz-se à saída
+}
+
+async function procurarComRetry(token: string, desc: string) {
+  try { return await procurar(token, desc); }
+  catch (e) { if (/HTTP (402|429)/.test(String(e))) { await new Promise(r => setTimeout(r, 2500)); return await procurar(token, desc); } throw e; }
 }
 
 Deno.serve(async (req) => {
@@ -89,12 +102,12 @@ Deno.serve(async (req) => {
         if (ok) { res[idx] = { conhecido: true, produto: { marca: ok.marca, produto: ok.produto, tamanho: ok.tamanho, imagem: ok.imagem } }; return; }
         // 2) candidatos já procurados
         const { data: cache } = await sb.from('candidatos_cache').select('candidatos').eq('desc_norm', d).maybeSingle();
-        if (cache) { res[idx] = { candidatos: cache.candidatos }; return; }
+        if (cache) { res[idx] = { candidatos: melhores(cache.candidatos, l.descricao) }; return; }
         if (!token) { res[idx] = { candidatos: [] }; return; }
         // 3) procurar nos sites (uma vez por descrição, para todas as lojas)
-        const cand = await procurar(token, l.descricao);
+        const cand = await procurarComRetry(token, l.descricao);
         await sb.from('candidatos_cache').upsert({ desc_norm: d, candidatos: cand });
-        res[idx] = { candidatos: cand };
+        res[idx] = { candidatos: melhores(cand, l.descricao) };
       } catch (e) { res[idx] = { candidatos: [], erro: String((e as Error).message || e).slice(0, 120) }; }
     }));
   }
