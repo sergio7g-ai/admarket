@@ -111,5 +111,15 @@ Deno.serve(async (req) => {
       } catch (e) { res[idx] = { candidatos: [], erro: String((e as Error).message || e).slice(0, 120) }; }
     }));
   }
+  // trocar as fotos pelas versões sem fundo já feitas (as que faltam, a app pede à função foto-sem-fundo)
+  const fotos = [...new Set(res.flatMap((r: any) => [r?.produto?.imagem, ...(r?.candidatos || []).map((c: any) => c.imagem)]).filter(Boolean))];
+  if (fotos.length) {
+    const { data: sf } = await sb.from('fotos_sem_fundo').select('origem,url').in('origem', fotos);
+    const m = new Map((sf || []).filter((x: any) => x.url).map((x: any) => [x.origem, x.url]));
+    for (const r of res) {
+      if (r?.produto?.imagem && m.has(r.produto.imagem)) r.produto.imagem = m.get(r.produto.imagem);
+      for (const c of r?.candidatos || []) if (m.has(c.imagem)) { c.original = c.imagem; c.imagem = m.get(c.imagem); }
+    }
+  }
   return json({ ok: true, linhas: res });
 });
