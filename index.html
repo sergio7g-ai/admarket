@@ -232,7 +232,7 @@ td.low{color:var(--green-ink);font-weight:700}
 .post *{line-height:1.05}
 .p-top{position:absolute;left:6cqw;top:6cqw;right:6cqw;display:flex;align-items:center;gap:3cqw;font-size:4.6cqw;font-weight:700}
 .p-logo{width:11cqw;height:11cqw;border-radius:50%;object-fit:cover;flex:none;display:grid;place-items:center;font-size:4.4cqw;font-weight:800;overflow:hidden}
-.p-chip{display:inline-block;padding:1.8cqw 3.6cqw;border-radius:99px;font-size:4cqw;font-weight:800;letter-spacing:.06em}
+.p-chip{display:inline-block;white-space:nowrap;padding:1.8cqw 3.6cqw;border-radius:99px;font-size:4cqw;font-weight:800;letter-spacing:.06em}
 .p-name{font-size:10cqw;font-weight:800;letter-spacing:-.03em}
 .p-size{font-size:5cqw;font-weight:600;opacity:.75;margin-top:1.5cqw}
 .p-price{font-size:15cqw;font-weight:800;letter-spacing:-.04em}
@@ -589,56 +589,107 @@ function postHTML(p,style){
   const ph=`<img src="${PHOTOS[p.id]}" alt="">`;
   const logo=s.logo?`<img class="p-logo" src="${s.logo}" alt="">`:`<span class="p-logo" style="background:${i1};color:${c1}">${esc(initials(s.name))}</span>`;
   const logo2=s.logo?`<img class="p-logo" src="${s.logo}" alt="">`:`<span class="p-logo" style="background:${c1};color:${i1}">${esc(initials(s.name))}</span>`;
-  const comp=sg.beats?`Grandes superfícies: desde ${eur(sg.low)}`:'';
+  const comp='';   // as publicações nunca mostram preços nem comparação com as grandes superfícies
   if(style===0)return `<div class="post" style="background:${c1};color:${i1}">
-    <div class="p-top">${logo}<span>${esc(s.name)}</span></div>
-    <div style="position:absolute;left:6cqw;top:23cqw;width:48cqw"><span class="p-chip" style="background:${c2};color:${i2}">PROMOÇÃO</span>
+    <div class="p-top" data-z="topo">${logo}<span>${esc(s.name)}</span></div>
+    <div data-z="txt" style="position:absolute;left:6cqw;top:23cqw;width:48cqw"><span class="p-chip" style="background:${c2};color:${i2}">PROMOÇÃO</span>
       <div class="p-name" style="font-size:7.6cqw;margin-top:3.5cqw">${esc(p.name)}</div><div class="p-size" style="font-size:4.2cqw">${esc(p.size)}</div>${comp?`<div class="p-comp" style="opacity:.85;font-size:3.6cqw">${comp}</div>`:''}</div>
-    <div class="p-ph" style="right:6cqw;top:22cqw;width:38cqw;height:50cqw">${ph}</div>
-    <div style="position:absolute;left:5cqw;bottom:12cqw;background:${c2};color:${i2};border-radius:99px;padding:2.4cqw 5cqw;transform:rotate(-4deg);box-shadow:0 2cqw 4cqw rgba(0,0,0,.2)"><span class="p-price" style="font-size:11cqw">${eur(sg.price)}</span></div>
-    <div class="p-foot" style="text-align:right">Diga <b>${cd}</b> na caixa</div></div>`;
+    <div class="p-ph" data-z="foto" style="right:6cqw;top:22cqw;width:38cqw;height:50cqw">${ph}</div>
+    <div data-z="preco" style="position:absolute;left:5cqw;bottom:12cqw;background:${c2};color:${i2};border-radius:99px;padding:2.4cqw 5cqw;transform:rotate(-4deg);box-shadow:0 2cqw 4cqw rgba(0,0,0,.2)"><span class="p-price" style="font-size:11cqw">${eur(sg.price)}</span></div>
+    <div class="p-foot" data-z="rodape" style="text-align:right">Diga <b>${cd}</b> na caixa</div></div>`;
   if(style===1)return `<div class="post" style="background:#FFFFFF;color:#0F172A;box-shadow:inset 0 0 0 1px rgba(15,23,42,.06)">
     <div style="position:absolute;inset:0 0 auto 0;height:21cqw;background:${c1}"></div>
-    <div class="p-top" style="color:${i1}">${logo}<span>${esc(s.name)}</span></div>
-    <div class="p-ph" style="left:6cqw;top:27cqw;width:40cqw;height:54cqw">${ph}</div>
-    <div style="position:absolute;left:51cqw;right:5cqw;top:28cqw"><div class="p-name" style="font-size:6.6cqw">${esc(p.name)}</div><div class="p-size" style="font-size:3.8cqw">${esc(p.size)}</div>
+    <div class="p-top" data-z="topo" style="color:${i1}">${logo}<span>${esc(s.name)}</span></div>
+    <div class="p-ph" data-z="foto" style="left:6cqw;top:27cqw;width:40cqw;height:54cqw">${ph}</div>
+    <div data-z="txt" style="position:absolute;left:51cqw;right:5cqw;top:28cqw"><div class="p-name" style="font-size:6.6cqw">${esc(p.name)}</div><div class="p-size" style="font-size:3.8cqw">${esc(p.size)}</div>
       <div class="p-price" style="color:${pc};font-size:12.5cqw;margin-top:4cqw">${eur(sg.price)}</div>
       <span class="p-chip" style="background:${c2};color:${i2};margin-top:2.5cqw;font-size:3.4cqw">ESTA SEMANA</span>${comp?`<div class="p-comp" style="color:#475569;font-size:3.4cqw">${comp}</div>`:''}</div>
-    <div class="p-foot" style="color:#475569;font-size:3.8cqw">Diga <b style="color:#0F172A">${cd}</b> na caixa · válido esta semana</div></div>`;
+    <div class="p-foot" data-z="rodape" style="color:#475569;font-size:3.8cqw">Diga <b style="color:#0F172A">${cd}</b> na caixa · válido esta semana</div></div>`;
   return `<div class="post" style="background:${c2} repeating-linear-gradient(135deg,rgba(255,255,255,.10) 0 4cqw,rgba(255,255,255,0) 4cqw 8cqw);color:${i2}">
-    <div style="position:absolute;left:6cqw;top:6cqw;font-size:7cqw;font-weight:800">SÓ ESTA SEMANA</div>
-    <div style="position:absolute;left:6cqw;right:6cqw;top:19cqw;height:58cqw;background:#FFFFFF;color:#0F172A;border-radius:4cqw;transform:rotate(-2.5deg);box-shadow:0 2cqw 6cqw rgba(0,0,0,.18);display:flex;gap:3cqw;padding:4cqw;align-items:center">
-      <div style="width:40%;height:100%;display:grid;place-items:center">${ph.replace('<img','<img style="max-width:100%;max-height:100%;object-fit:contain"')}</div>
-      <div style="flex:1;min-width:0"><div class="p-name" style="font-size:6.4cqw">${esc(p.name)}</div><div class="p-size" style="font-size:3.6cqw">${esc(p.size)}</div>
+    <div data-z="topo" style="position:absolute;left:6cqw;top:6cqw;font-size:7cqw;font-weight:800">SÓ ESTA SEMANA</div>
+    <div data-z="cartao" data-caixa data-fixo style="position:absolute;left:6cqw;right:6cqw;top:19cqw;height:58cqw;background:#FFFFFF;color:#0F172A;border-radius:4cqw;transform:rotate(-2.5deg);box-shadow:0 2cqw 6cqw rgba(0,0,0,.18);display:flex;gap:3cqw;padding:4cqw;align-items:center">
+      <div data-z="foto" style="width:40%;height:100%;display:grid;place-items:center">${ph.replace('<img','<img style="max-width:100%;max-height:100%;object-fit:contain"')}</div>
+      <div data-z="txt" style="flex:1;min-width:0"><div class="p-name" style="font-size:6.4cqw">${esc(p.name)}</div><div class="p-size" style="font-size:3.6cqw">${esc(p.size)}</div>
         <div class="p-price" style="color:${pc};font-size:12cqw;margin-top:3cqw">${eur(sg.price)}</div>${comp?`<div class="p-comp" style="color:#475569;font-size:3.3cqw">${comp}</div>`:''}</div></div>
-    <div class="p-foot" style="display:flex;align-items:center;gap:3cqw">${logo2}<span><b style="font-family:var(--f-head);letter-spacing:0">${esc(s.name)}</b><br>${esc(s.city)}</span><span style="margin-left:auto;text-align:right">Diga na caixa<br><b>${cd}</b></span></div></div>`;
+    <div class="p-foot" data-z="rodape" style="display:flex;align-items:center;gap:3cqw">${logo2}<span><b style="font-family:var(--f-head);letter-spacing:0">${esc(s.name)}</b><br>${esc(s.city)}</span><span style="margin-left:auto;text-align:right">Diga na caixa<br><b>${cd}</b></span></div></div>`;
 }
 function postIllustrated(p,style){
   const s=S.store,c1=s.c1,c2=s.c2,i1=ink(c1),i2=ink(c2),sg=suggest(p),cd=code(p);
   const logo=s.logo?`<img class="p-logo" src="${s.logo}" alt="">`:`<span class="p-logo" style="background:${i1};color:${c1}">${esc(initials(s.name))}</span>`;
   const logo2=s.logo?`<img class="p-logo" src="${s.logo}" alt="">`:`<span class="p-logo" style="background:${c1};color:${i1}">${esc(initials(s.name))}</span>`;
-  const comp=sg.beats?`Grandes superfícies: desde ${eur(sg.low)}`:'';
+  const comp='';   // as publicações nunca mostram preços nem comparação com as grandes superfícies
   const pc=i1==='#FFFFFF'?c1:'#0F172A';
   if(style===0)return `<div class="post" style="background:${c1};color:${i1}">
-    <div class="p-top">${logo}<span>${esc(s.name)}</span></div>
-    <div style="position:absolute;left:6cqw;top:27cqw;right:6cqw"><span class="p-chip" style="background:${c2};color:${i2}">PROMOÇÃO</span>
-      <div class="p-name" style="margin-top:4cqw">${esc(p.name)}</div><div class="p-size">${esc(p.size)}</div>${comp?`<div class="p-comp" style="opacity:.85;max-width:48cqw">${comp}</div>`:''}</div>
-    <div style="position:absolute;right:5cqw;bottom:13cqw;width:38cqw;height:38cqw;border-radius:50%;background:${c2};color:${i2};display:grid;place-items:center;transform:rotate(-8deg)"><span class="p-price" style="font-size:11cqw">${eur(sg.price)}</span></div>
-    <div class="p-foot">Só esta semana</div></div>`;
+    <div class="p-top" data-z="topo">${logo}<span>${esc(s.name)}</span></div>
+    <div data-z="txt" style="position:absolute;left:6cqw;top:27cqw;right:${p.name.length>12?47:6}cqw"><span class="p-chip" style="background:${c2};color:${i2}">PROMOÇÃO</span>
+      <div class="p-name" style="margin-top:4cqw;font-size:${p.name.length>34?6:p.name.length>22?7:p.name.length>12?8.4:10}cqw">${esc(p.name)}</div><div class="p-size">${esc(p.size)}</div>${comp?`<div class="p-comp" style="opacity:.85;max-width:48cqw">${comp}</div>`:''}</div>
+    <div data-z="preco" style="position:absolute;right:5cqw;bottom:13cqw;width:38cqw;height:38cqw;border-radius:50%;background:${c2};color:${i2};display:grid;place-items:center;transform:rotate(-8deg)"><span class="p-price" style="font-size:11cqw">${eur(sg.price)}</span></div>
+    <div class="p-foot" data-z="rodape">Só esta semana</div></div>`;
   if(style===1)return `<div class="post" style="background:#FFFFFF;color:#0F172A;box-shadow:inset 0 0 0 1px rgba(15,23,42,.06)">
     <div style="position:absolute;inset:0 0 auto 0;height:23cqw;background:${c1}"></div>
-    <div class="p-top" style="color:${i1}">${logo}<span>${esc(s.name)}</span></div>
-    <div style="position:absolute;left:6cqw;right:6cqw;top:31cqw"><div class="p-name" style="font-size:11cqw">${esc(p.name)}</div><div class="p-size">${esc(p.size)}</div>
+    <div class="p-top" data-z="topo" style="color:${i1}">${logo}<span>${esc(s.name)}</span></div>
+    <div data-z="txt" style="position:absolute;left:6cqw;right:6cqw;top:31cqw"><div class="p-name" style="font-size:11cqw">${esc(p.name)}</div><div class="p-size">${esc(p.size)}</div>
       <div style="display:flex;align-items:center;gap:4cqw;margin-top:6cqw"><span class="p-price" style="color:${pc}">${eur(sg.price)}</span><span class="p-chip" style="background:${c2};color:${i2}">ESTA SEMANA</span></div>${comp?`<div class="p-comp" style="color:#475569">${comp}</div>`:''}</div>
-    <div class="p-foot" style="color:#475569">Promoção válida esta semana na loja</div></div>`;
+    <div class="p-foot" data-z="rodape" style="color:#475569">Promoção válida esta semana na loja</div></div>`;
   return `<div class="post" style="background:${c2} repeating-linear-gradient(135deg,rgba(255,255,255,.10) 0 4cqw,rgba(255,255,255,0) 4cqw 8cqw);color:${i2}">
-    <div style="position:absolute;left:6cqw;top:6cqw;font-size:7cqw;font-weight:800">SÓ ESTA SEMANA</div>
-    <div style="position:absolute;left:8cqw;right:8cqw;top:22cqw;background:#FFFFFF;color:#0F172A;border-radius:4cqw;padding:6cqw;transform:rotate(-3deg);box-shadow:0 2cqw 6cqw rgba(0,0,0,.18)">
+    <div data-z="topo" style="position:absolute;left:6cqw;top:6cqw;font-size:7cqw;font-weight:800">SÓ ESTA SEMANA</div>
+    <div data-z="cartao" data-caixa style="position:absolute;left:8cqw;right:8cqw;top:22cqw;background:#FFFFFF;color:#0F172A;border-radius:4cqw;padding:6cqw;transform:rotate(-3deg);box-shadow:0 2cqw 6cqw rgba(0,0,0,.18)">
       <div class="p-name" style="font-size:8.5cqw">${esc(p.name)} <span style="font-weight:600;opacity:.55;font-size:5.5cqw">${esc(p.size)}</span></div>
       <div class="p-price" style="color:${pc};margin-top:3cqw">${eur(sg.price)}</div>${comp?`<div class="p-comp" style="color:#475569">${comp}</div>`:''}</div>
-    <div class="p-foot" style="display:flex;align-items:center;gap:3cqw">${logo2}<span><b style="font-family:var(--f-head);letter-spacing:0">${esc(s.name)}</b><br>${esc(s.city)}</span></div></div>`;
+    <div class="p-foot" data-z="rodape" style="display:flex;align-items:center;gap:3cqw">${logo2}<span><b style="font-family:var(--f-head);letter-spacing:0">${esc(s.name)}</b><br>${esc(s.city)}</span></div></div>`;
 }
 const STYLE_NAMES=['Destaque','Montra','Folheto'];
+/* ===== enquadramento automático das publicações =====
+   Cada publicação tem zonas (data-z): topo, texto, foto, preço, rodapé. Depois de desenhada, verifica-se:
+   nenhuma zona sai da imagem (ou do cartão onde está), nenhuma zona de texto se sobrepõe a outra, nenhuma palavra
+   transborda. Se houver problema, o texto dessa zona encolhe aos poucos até caber. */
+const PRI={foto:0,txt:3,cartao:3,preco:2,txt2:2,topo:1,rodape:1};
+// área que a zona ocupa de facto: caixas com fundo (preço, cartão) e fotos usam a caixa; blocos de texto usam só o texto escrito
+function areaZona(z){
+  const cs=getComputedStyle(z),fundo=(cs.backgroundColor&&cs.backgroundColor!=='rgba(0, 0, 0, 0)'&&cs.backgroundColor!=='transparent')||cs.backgroundImage!=='none';
+  if(fundo||z.dataset.z==='foto')return z.getBoundingClientRect();
+  // só o texto escrito (os blocos ocupam a largura toda mesmo com uma palavra) + pastilhas com fundo
+  let L=1e9,T=1e9,R=-1e9,B=-1e9;const add=q=>{if(!q.width&&!q.height)return;L=Math.min(L,q.left);T=Math.min(T,q.top);R=Math.max(R,q.right);B=Math.max(B,q.bottom)};
+  const w=document.createTreeWalker(z,NodeFilter.SHOW_TEXT);let n;
+  while((n=w.nextNode())){if(!n.textContent.trim())continue;const r=document.createRange();r.selectNodeContents(n);for(const q of r.getClientRects())add(q)}
+  for(const e of z.querySelectorAll('.p-chip,.p-logo,img'))add(e.getBoundingClientRect());
+  return R>L?new DOMRect(L,T,R-L,B-T):z.getBoundingClientRect();
+}
+function encaixarPost(post){
+  const P=post.getBoundingClientRect();if(P.width<40||P.height<40)return 0;
+  const zs=[...post.querySelectorAll('[data-z]')];if(!zs.length)return 0;
+  const tol=Math.max(1,P.width*0.004);
+  const problemas=()=>{
+    const out=new Set();
+    const bs=zs.map(z=>({z,r:areaZona(z),c:z.parentElement.closest('[data-caixa]')||post}));
+    for(const b of bs){const C=b.c===post?P:b.c.getBoundingClientRect();
+      if(b.r.width&&(b.r.left<C.left-tol||b.r.right>C.right+tol||b.r.top<C.top-tol||b.r.bottom>C.bottom+tol))out.add(b.z)}
+    for(let i=0;i<bs.length;i++)for(let j=i+1;j<bs.length;j++){const a=bs[i],b=bs[j];if(a.c!==b.c||!a.r.width||!b.r.width)continue;
+      const w=Math.min(a.r.right,b.r.right)-Math.max(a.r.left,b.r.left),h=Math.min(a.r.bottom,b.r.bottom)-Math.max(a.r.top,b.r.top);
+      if(w>tol&&h>tol){const pa=a.z.hasAttribute('data-fixo')?-1:(PRI[a.z.dataset.z]??2),pb=b.z.hasAttribute('data-fixo')?-1:(PRI[b.z.dataset.z]??2);   // encolhe o bloco de texto principal, não o rodapé
+        if(pa>=pb&&pa>0)out.add(a.z);if(pb>=pa&&pb>0)out.add(b.z)}}
+    for(const z of zs){if(z.dataset.z==='foto')continue;
+      if(z.hasAttribute('data-caixa')&&(z.scrollHeight>z.clientHeight+1||z.scrollWidth>z.clientWidth+1))out.add(z);
+      for(const t of z.querySelectorAll('.p-name,.p-price,.p-size'))if(t.scrollWidth>t.clientWidth+1)out.add(z)}
+    return [...out].filter(z=>z.dataset.z!=='foto');
+  };
+  let ps=problemas(),n=0;
+  while(ps.length&&n<16){
+    for(const z of ps){const alvo=z.dataset.z==='cartao'?z.querySelector('[data-z="txt"]')||z:z;
+      // encolhe primeiro o nome e o preço (os maiores); as pastilhas e o tamanho só se não houver nome/preço
+      const grandes=[...alvo.querySelectorAll('.p-name,.p-price')];
+      const ts=grandes.length&&n<6?grandes:[alvo,...alvo.querySelectorAll('*')].filter(t=>[...t.childNodes].some(c=>c.nodeType===3&&c.textContent.trim()));
+      for(const t of ts)t.style.fontSize=(parseFloat(getComputedStyle(t).fontSize)*0.92)+'px'}
+    ps=problemas();n++;
+  }
+  post.dataset.enquadrado=ps.length?'falha':(n?'ajustado':'ok');
+  return ps.length;
+}
+let _encT=null;
+function encaixarTodos(){clearTimeout(_encT);_encT=setTimeout(()=>{document.querySelectorAll('.post,.reel .scene').forEach(encaixarPost)},30)}
+new MutationObserver(m=>{if(m.some(r=>[...r.addedNodes].some(n=>n.nodeType===1&&(n.matches?.('.post,.reel')||n.querySelector?.('.post,.reel')))))encaixarTodos()}).observe(document.documentElement,{childList:true,subtree:true});
+addEventListener('resize',()=>{clearTimeout(window._rz);window._rz=setTimeout(()=>render(),200)});
+document.fonts?.ready?.then(()=>render());
 
 /* nav */
 const OWNER_TABS=[['home','Início'],['promos','Promoções'],['posts','Publicações'],['resultados','Resultados']];
@@ -1102,33 +1153,33 @@ function storeLogo(onC1){const s=S.store,c1=s.c1,i1=ink(c1);return s.logo?`<img 
 function coverSlide(items,N){
   const s=S.store,c1=s.c1,c2=s.c2,i1=ink(c1),i2=ink(c2),pics=items.slice(0,3);
   return `<div class="post" style="background:${c1};color:${i1}">
-    <div class="p-top">${storeLogo(true)}<span>${esc(s.name)}</span></div>
-    <div style="position:absolute;left:6cqw;right:6cqw;top:22cqw"><span class="p-chip" style="background:${c2};color:${i2}">${esc(weekLabel())}</span>
+    <div class="p-top" data-z="topo" style="right:16cqw">${storeLogo(true)}<span>${esc(s.name)}</span></div>
+    <div data-z="txt" style="position:absolute;left:6cqw;right:6cqw;top:22cqw"><span class="p-chip" style="background:${c2};color:${i2}">${esc(weekLabel())}</span>
       <div class="p-name" style="font-size:11.5cqw;margin-top:4cqw;line-height:1">Promoções<br>da semana</div></div>
-    <div style="position:absolute;left:8cqw;right:8cqw;bottom:13cqw;height:34cqw">${pics.map((x,i)=>`<div style="position:absolute;bottom:0;left:${i*29}cqw;width:30cqw;height:${30+(i===1?4:0)}cqw;transform:rotate(${[-8,0,8][i]}deg)">${phImg(x.p)}</div>`).join('')}</div>
-    <div class="p-foot" style="text-align:right;font-weight:700">Desliza →</div>
+    <div data-z="foto" style="position:absolute;left:8cqw;right:8cqw;bottom:13cqw;height:34cqw">${pics.map((x,i)=>`<div style="position:absolute;bottom:0;left:${i*29}cqw;width:30cqw;height:${30+(i===1?4:0)}cqw;transform:rotate(${[-8,0,8][i]}deg)">${phImg(x.p)}</div>`).join('')}</div>
+    <div class="p-foot" data-z="rodape" style="text-align:right;font-weight:700;left:auto">Desliza →</div>
     <span style="position:absolute;right:5cqw;top:6cqw;font:600 3.6cqw var(--f-ui);opacity:.8">1/${N}</span></div>`;
 }
 function productSlide(x,n,N){
   const s=S.store,c1=s.c1,c2=s.c2,i1=ink(c1),i2=ink(c2),p=x.p,sg=x.s,pc=i1==='#FFFFFF'?c1:'#0F172A';
-  const off=sg.beats?Math.round((sg.low-sg.price)/sg.low*100):0;
+  const off=0;   // sem comparações com a concorrência nas publicações
   return `<div class="post" style="background:#FFFFFF;color:#0F172A;box-shadow:inset 0 0 0 1px rgba(15,23,42,.06)">
     <div style="position:absolute;inset:0 0 auto 0;height:17cqw;background:${c1}"></div>
-    <div class="p-top" style="color:${i1};top:4.5cqw">${storeLogo(true)}<span>${esc(s.name)}</span></div>
+    <div class="p-top" data-z="topo" style="color:${i1};top:4.5cqw;right:16cqw">${storeLogo(true)}<span>${esc(s.name)}</span></div>
     <span style="position:absolute;right:5cqw;top:6cqw;font:600 3.6cqw var(--f-ui);color:${i1};opacity:.85">${n}/${N}</span>
-    <div style="position:absolute;left:6cqw;right:6cqw;top:21cqw;height:42cqw">${phImg(p)}</div>
+    <div data-z="foto" style="position:absolute;left:6cqw;right:6cqw;top:21cqw;height:42cqw">${phImg(p)}</div>
     ${off?`<span class="p-chip" style="position:absolute;right:6cqw;top:22cqw;background:${c2};color:${i2}">-${off}%</span>`:''}
-    <div style="position:absolute;left:6cqw;right:6cqw;bottom:13cqw"><div class="p-name" style="font-size:6.4cqw">${esc(p.name)}</div><div class="p-size" style="font-size:3.6cqw">${esc(p.size)}</div>
-      <div style="display:flex;align-items:baseline;gap:3cqw;margin-top:2cqw"><span class="p-price" style="color:${pc};font-size:11cqw">${eur(sg.price)}</span>${sg.beats?`<span style="font:500 3.6cqw var(--f-ui);color:#64748B;text-decoration:line-through">${eur(sg.low)}</span>`:''}</div></div>
-    <div class="p-foot" style="color:#475569;font-size:3.5cqw">${sg.beats?`Grandes superfícies desde ${eur(sg.low)}`:'Só esta semana'}</div></div>`;
+    <div data-z="txt" style="position:absolute;left:6cqw;right:6cqw;bottom:13cqw"><div class="p-name" style="font-size:6.4cqw">${esc(p.name)}</div><div class="p-size" style="font-size:3.6cqw">${esc(p.size)}</div>
+      <div style="display:flex;align-items:baseline;gap:3cqw;margin-top:2cqw"><span class="p-price" style="color:${pc};font-size:11cqw">${eur(sg.price)}</span></div></div>
+    <div class="p-foot" data-z="rodape" style="color:#475569;font-size:3.5cqw">Só esta semana</div></div>`;
 }
 function endSlide(N){
   const s=S.store,c2=s.c2,i2=ink(c2);
   return `<div class="post" style="background:${c2} repeating-linear-gradient(135deg,rgba(255,255,255,.10) 0 4cqw,rgba(255,255,255,0) 4cqw 8cqw);color:${i2}">
     <span style="position:absolute;right:5cqw;top:6cqw;font:600 3.6cqw var(--f-ui);opacity:.85">${N}/${N}</span>
-    <div style="position:absolute;left:7cqw;right:7cqw;top:20cqw"><div class="p-name" style="font-size:11cqw">Até já!</div>
+    <div data-z="txt" style="position:absolute;left:7cqw;right:7cqw;top:20cqw"><div class="p-name" style="font-size:11cqw">Até já!</div>
       <div style="font:500 4.6cqw/1.35 var(--f-ui);margin-top:4cqw">Promoções válidas de ${esc(weekLabel())}, enquanto houver stock.</div></div>
-    <div class="p-foot" style="display:flex;align-items:center;gap:3cqw">${storeLogo(false)}<span><b style="font-family:var(--f-head);letter-spacing:0">${esc(s.name)}</b><br>${esc(s.city)}${s.ig?' · '+esc(s.ig):''}</span></div></div>`;
+    <div class="p-foot" data-z="rodape" style="display:flex;align-items:center;gap:3cqw">${storeLogo(false)}<span><b style="font-family:var(--f-head);letter-spacing:0">${esc(s.name)}</b><br>${esc(s.city)}${s.ig?' · '+esc(s.ig):''}</span></div></div>`;
 }
 function vCarousel(st){
   const items=st.appr;
@@ -1146,30 +1197,30 @@ function reelPick(st,crit){const pool=reelPool(st);if(!pool.length)return null;r
 function vReel(st){
   const crit=S.reelCrit||'deal',x=reelPick(st,crit);
   const head=`<div class="card-h"><div><span class="label">Reels sugerido · Instagram, Facebook e TikTok</span><h2>Um produto em destaque</h2></div>
-    <div class="seg" role="group" aria-label="Critério"><button data-act="reel-crit" data-id="deal" aria-pressed="${crit==='deal'}">Melhor vs concorrência</button><button data-act="reel-crit" data-id="margin" aria-pressed="${crit==='margin'}">Maior margem</button></div></div>`;
+    <div class="seg" role="group" aria-label="Critério"><button data-act="reel-crit" data-id="deal" aria-pressed="${crit==='deal'}">Melhor promoção</button><button data-act="reel-crit" data-id="margin" aria-pressed="${crit==='margin'}">Maior margem</button></div></div>`;
   if(!x)return `<section class="card pad">${head}<div class="empty">Aprove uma promoção para a IA escolher o produto do reels.</div></section>`;
   const s=S.store,c1=s.c1,c2=s.c2,i1=ink(c1),i2=ink(c2),p=x.p,sg=x.s,pc=i1==='#FFFFFF'?c1:'#0F172A',off=Math.round(Math.max(0,dealOf(x))*100),cd=code(p);
   const why=crit==='deal'?(sg.beats?`É a promoção mais forte face à concorrência: ${off}% abaixo do ${lowComp(p).name} (${eur(sg.low)}).`:'Nenhuma promoção bate a concorrência; escolhido o produto mais próximo.'):`É a promoção com mais margem: ${pct(sg.margin)} ganhos por unidade (${eur(r2(sg.price-p.cost))}).`;
   const r=S.reel,fresh=r&&r.pid===p.id&&r.crit===crit;
-  const hook=crit==='deal'&&sg.beats?`Mais barato que nas grandes superfícies`:`A promoção da semana`;
+  const hook='A promoção da semana';   // sem comparações com a concorrência nas publicações
   return `<section class="card pad">${head}
     <div class="reel-wrap">
       <div class="phone"><div class="reel">
-        <div class="scene" style="background:${c1};color:${i1}"><div style="position:absolute;left:8cqw;right:8cqw;top:12cqw;font:800 10cqw/1.05 var(--f-head);letter-spacing:-.03em">${esc(hook)}</div><div class="rz" style="position:absolute;left:10cqw;right:10cqw;bottom:16cqw;height:80cqw">${phImg(p)}</div></div>
-        <div class="scene" style="background:#FFFFFF;color:#0F172A"><div style="position:absolute;left:12cqw;right:12cqw;top:10cqw;height:70cqw">${phImg(p)}</div>
-          <div style="position:absolute;left:8cqw;right:8cqw;bottom:22cqw"><div style="font:700 7cqw/1.1 var(--f-head)">${esc(p.name)}</div><div style="font:500 4.5cqw var(--f-ui);color:#64748B;margin-top:2cqw">${esc(p.size)}</div>
-          ${sg.beats?`<div style="font:600 5.5cqw var(--f-ui);color:#64748B;text-decoration:line-through;margin-top:5cqw">${eur(sg.low)}</div>`:''}<div class="rp" style="font:800 20cqw/1 var(--f-head);letter-spacing:-.04em;color:${pc}">${eur(sg.price)}</div></div>
-          ${off?`<span class="p-chip" style="position:absolute;right:8cqw;top:8cqw;background:${c2};color:${i2};font-size:6cqw">-${off}%</span>`:''}</div>
-        <div class="scene" style="background:${c2};color:${i2}"><div style="position:absolute;left:8cqw;right:8cqw;top:18cqw;font:800 11cqw/1.05 var(--f-head)">Só esta semana</div>
-          <div style="position:absolute;left:8cqw;right:8cqw;top:52cqw;font:500 6cqw/1.35 var(--f-ui)">${esc(s.city)}</div>
-          <div style="position:absolute;left:8cqw;right:8cqw;bottom:14cqw;display:flex;align-items:center;gap:4cqw;font:700 6cqw var(--f-head)">${storeLogo(false).replace('class="p-logo"','class="p-logo" style="width:16cqw;height:16cqw;font-size:6cqw"')}<span>${esc(s.name)}</span></div></div>
+        <div class="scene" style="background:${c1};color:${i1}"><div data-z="txt" style="position:absolute;left:8cqw;right:8cqw;top:12cqw;font:800 10cqw/1.05 var(--f-head);letter-spacing:-.03em">${esc(hook)}</div><div class="rz" data-z="foto" style="position:absolute;left:10cqw;right:10cqw;bottom:16cqw;height:80cqw">${phImg(p)}</div></div>
+        <div class="scene" style="background:#FFFFFF;color:#0F172A"><div data-z="foto" style="position:absolute;left:12cqw;right:12cqw;top:16cqw;height:64cqw">${phImg(p)}</div>
+          <div data-z="txt" style="position:absolute;left:8cqw;right:8cqw;bottom:22cqw"><div style="font:700 7cqw/1.1 var(--f-head)">${esc(p.name)}</div><div style="font:500 4.5cqw var(--f-ui);color:#64748B;margin-top:2cqw">${esc(p.size)}</div>
+          <div style="height:5cqw"></div><div class="rp" style="font:800 20cqw/1 var(--f-head);letter-spacing:-.04em;color:${pc}">${eur(sg.price)}</div></div>
+          <span class="p-chip" style="position:absolute;right:8cqw;top:8cqw;background:${c2};color:${i2};font-size:6cqw">PROMOÇÃO</span></div>
+        <div class="scene" style="background:${c2};color:${i2}"><div data-z="txt" style="position:absolute;left:8cqw;right:8cqw;top:18cqw;font:800 11cqw/1.05 var(--f-head)">Só esta semana</div>
+          <div data-z="txt2" style="position:absolute;left:8cqw;right:8cqw;top:52cqw;font:500 6cqw/1.35 var(--f-ui)">${esc(s.city)}</div>
+          <div data-z="rodape" style="position:absolute;left:8cqw;right:8cqw;bottom:14cqw;display:flex;align-items:center;gap:4cqw;font:700 6cqw var(--f-head)">${storeLogo(false).replace('class="p-logo"','class="p-logo" style="width:16cqw;height:16cqw;font-size:6cqw"')}<span>${esc(s.name)}</span></div></div>
         <div class="rbar"><i></i></div>
       </div></div>
       <div style="min-width:0;display:flex;flex-direction:column;gap:14px">
         <div class="when" style="background:var(--green-soft)">${IC.spark.replace('<svg','<svg style="color:var(--green-deep)"')}<div><b>${esc(p.name)} a ${eur(sg.price)}</b><span>${esc(why)}</span></div></div>
         <ol class="story">
           <li><b>0–3 s · Gancho</b><span>Texto "${esc(hook)}" com o produto a entrar em zoom.</span><em>Locução: "${esc(hook)}!"</em></li>
-          <li><b>3–6 s · Preço</b><span>${sg.beats?`O preço da concorrência (${eur(sg.low)}) risca-se e aparece o preço da loja.`:'Aparece o preço da loja em grande.'}</span><em>Locução: "${esc(p.name)}, só ${eur(sg.price).replace(/\s*€/,' euros')}."</em></li>
+          <li><b>3–6 s · Preço</b><span>Aparece o preço da loja em grande.</span><em>Locução: "${esc(p.name)}, só ${eur(sg.price).replace(/\s*€/,' euros')}."</em></li>
           <li><b>6–9 s · Chamada</b><span>Nome, localidade e logótipo da loja.</span><em>Locução: "Só esta semana, no ${esc(s.name)}."</em></li>
         </ol>
         <p class="xs muted">Legenda sugerida: "${esc(p.name)} a ${eur(sg.price)} 🔥 Só esta semana no ${esc(s.name)}." · Música: faixa com licença comercial, nunca um som em tendência sem licença.</p>
