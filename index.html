@@ -347,6 +347,7 @@ select.edit{width:auto;text-align:left}
 @media (max-width:760px){
   .pills{display:none}
   .tabbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:28;background:var(--glass-strong);backdrop-filter:saturate(1.6) blur(18px);-webkit-backdrop-filter:saturate(1.6) blur(18px);border-top:1px solid var(--line);padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+  .tabbar:not(.admin){grid-template-columns:repeat(5,minmax(0,1fr))}
   .tabbar.admin{grid-template-columns:repeat(2,minmax(0,1fr))}
   .tabbar button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;border-radius:12px;color:var(--subtle);font-size:.68rem;font-weight:600;position:relative}
   .tabbar button svg{width:22px;height:22px}
@@ -400,6 +401,7 @@ select.edit{width:auto;text-align:left}
 <input class="fileinput" type="file" id="inv-pdf" accept="application/pdf,image/*">
 <div class="toast" id="toast" role="status" hidden></div>
 
+<script src="folheto.js"></script>
 <script>
 (function(){
 const KEY='admark-demo-v5';
@@ -466,7 +468,7 @@ let S=null;
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!S||S.v!==6)S=seedTeste();
 S.menu=false;S.sheet=false;S.zoom=null;
-function save(){try{const c=Object.assign({},S);localStorage.setItem(KEY,JSON.stringify(c))}catch(e){}}
+function save(){try{const c=Object.assign({},S);if(c.folheto)c.folheto=Object.assign({},c.folheto,{gerado:null,geradoOk:!!(c.folheto.gerado||c.folheto.geradoOk)});localStorage.setItem(KEY,JSON.stringify(c))}catch(e){}}
 
 /* helpers */
 const fmt=new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'});
@@ -565,6 +567,7 @@ function mini(p){return PHOTOS[p.id]?`<span class="mini photo-mini"><img src="${
 
 /* icons */
 const IC={
+  folheto:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5C4.5 4 8 4 12 6c4-2 7.5-2 10-.5V19c-2.5-1.5-6-1.5-10 .5-4-2-7.5-2-10-.5z"/><path d="M12 6v13.5"/></svg>',
   resultados:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
   invoices:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h7M9 17h5"/></svg>',
@@ -748,8 +751,8 @@ addEventListener('resize',()=>{clearTimeout(window._rz);window._rz=setTimeout(()
 document.fonts?.ready?.then(()=>render());
 
 /* nav */
-const OWNER_TABS=[['home','Início'],['promos','Promoções'],['posts','Publicações'],['resultados','Resultados']];
-const MOBILE_TABS=['home','promos','posts','resultados'];
+const OWNER_TABS=[['home','Início'],['promos','Promoções'],['posts','Publicações'],['folheto','Folheto'],['resultados','Resultados']];
+const MOBILE_TABS=['home','promos','posts','folheto','resultados'];
 const OWNER_MENU_TABS=['invoices','compare','config','fotos'];
 const ADMIN_TABS=[['stores','Lojas'],['log','Registo']];
 function renderChrome(){
@@ -1293,13 +1296,70 @@ function extraSlots(k){
   return h;
 }
 
-const VIEWS={resultados:vResultados,fotos:vFotos,home:vHome,invoices:vInvoices,compare:vCompare,promos:vPromos,posts:vPosts,config:vConfig,stores:vStores,log:vLog};
-function vVazio(){return `<div class="ph"><div><h1>${S.tab==='posts'?'Publicações':S.tab==='promos'?'Promoções':'Olá, '+esc(S.store.name)}</h1></div></div>
+/* ===== Folheto da loja =====
+   Todos os produtos que dá para pôr em promoção sem descer da margem mínima; o dono escolhe, diz as datas e gera.
+   O folheto organiza-se por gama e dá mais destaque às melhores promoções e às maiores margens (flipbook). */
+function folhetoCands(){
+  return stats().all.filter(x=>x.s.price>x.p.cost&&x.s.margin>=x.s.minMargin-1e-9)
+    .map(x=>({...x,deal:x.s.beats?(x.s.low-x.s.price)/x.s.low:0}))
+    .map(x=>({...x,score:x.deal*1.5+x.s.margin-(x.s.semPreco?1:0)}))
+    .sort((a,b)=>b.score-a.score);
+}
+function folhetoEstado(){
+  const F=S.folheto=S.folheto||{};
+  if(!F.ini){const a=new Date();a.setDate(a.getDate()+1);const b=new Date(a);b.setDate(b.getDate()+6);F.ini=isoD(a);F.fim=isoD(b)}
+  if(!F.sel){F.sel={};const cs=folhetoCands();cs.filter(x=>!x.s.semPreco).forEach((x,i)=>{if(x.pr.status==='approved'||i<12)F.sel[x.p.id]=true})}
+  return F;
+}
+function fotoFolheto(p,publico){
+  const u=PHOTOS[p.id]||p.img||null;
+  if(u&&(!publico||/^https?:/.test(u)||u.length<160000))return {img:u};
+  if(!publico){const a=art(p);if(a&&!a.startsWith('<img'))return {arte:a}}
+  return {};
+}
+function dadosFolheto(publico){
+  const F=folhetoEstado(),s=S.store;
+  const itens=folhetoCands().filter(x=>F.sel[x.p.id]).map(x=>({nome:nomePost(x.p),tamanho:x.p.size||'',preco:x.s.price,cat:x.p.cat||'Mercearia',...fotoFolheto(x.p,publico)}));
+  return {loja:{nome:s.name,cidade:s.city||'',morada:s.morada||'',logo:s.logo&&(!publico||s.logo.length<160000)?s.logo:null,c1:s.c1,c2:s.c2,ig:/^@/.test(s.ig||'')?s.ig:''},ini:F.ini,fim:F.fim,itens,inscrever:true};
+}
+let _fbLivro=null;
+function montarFolheto(){
+  const el=document.getElementById('fb-prev');_fbLivro?.parar?.();_fbLivro=null;
+  if(!el||!S.folheto?.gerado||!window.Folheto)return;
+  _fbLivro=Folheto.livro(el,S.folheto.gerado,{max:460});
+}
+function linkFolheto(id){return location.origin+location.pathname.replace(/[^/]*$/,'')+'folheto.html?f='+id}
+function vFolheto(){
+  {const F0=folhetoEstado();if(F0.geradoOk&&!F0.gerado)F0.gerado=dadosFolheto(false)}
+  const F=folhetoEstado(),cs=folhetoCands(),nSel=cs.filter(x=>F.sel[x.p.id]).length;
+  const topDeal=new Set(cs.filter(x=>x.deal>0).sort((a,b)=>b.deal-a.deal).slice(0,3).map(x=>x.p.id));
+  const topMg=new Set(cs.slice().sort((a,b)=>b.s.margin-a.s.margin).slice(0,3).map(x=>x.p.id));
+  const cats=[...new Set(cs.map(x=>x.p.cat))];
+  const inp='padding:8px 10px;border:1px solid var(--line-2);border-radius:10px;font:inherit;background:#fff';
+  const g=F.gerado,pub=F.publicado;
+  return `<div class="ph"><div><h1>Folheto</h1><p>Aqui estão todos os produtos que pode pôr em promoção sem descer da margem mínima. Escolha os produtos e as datas e gere o folheto. Fica organizado por gama, com mais destaque para as melhores promoções e as maiores margens.</p></div><span class="chip c-blue">${nSel} escolhidos</span></div>
+  <section class="card pad"><div class="card-h"><h2>Datas do folheto</h2></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap" class="small"><span class="muted">De</span><input type="date" data-fol="ini" value="${F.ini}" style="${inp}"><span class="muted">a</span><input type="date" data-fol="fim" value="${F.fim}" min="${F.ini}" style="${inp}">
+    <button class="btn primary" data-act="gerar-folheto" style="margin-left:auto" ${nSel?'':'disabled'}>${IC.folheto.replace('<svg','<svg width="16" height="16"')}Gerar folheto</button></div></section>
+  ${g?`<section class="card pad"><div class="card-h"><div><span class="label">Folheto gerado · ${g.itens.length} produtos</span><h2>Válido de ${dCurta(new Date(g.ini+'T00:00'))} a ${dCurta(new Date(g.fim+'T00:00'))}</h2></div><span class="xs muted">Deslize ou toque nos lados para virar a página</span></div>
+    <div id="fb-prev" style="min-height:300px"></div>
+    <div class="acts" style="margin-top:16px;justify-content:flex-start;flex-wrap:wrap;gap:8px">${pub?`<input readonly value="${esc(pub.link)}" style="${inp};flex:1;min-width:220px"><button class="btn sm" data-act="copiar-link-folheto">Copiar link</button><a class="btn sm green" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent('Folheto de promoções do '+S.store.name+' ('+dCurta(new Date(g.ini+'T00:00'))+' a '+dCurta(new Date(g.fim+'T00:00'))+'): '+pub.link)}">Partilhar no WhatsApp</a>`:`<button class="btn sm green" data-act="publicar-folheto">Criar link para as redes</button><span class="xs muted">O link abre o folheto para qualquer cliente e tem o botão «Receber no WhatsApp».</span>`}</div>
+    ${F.inscritos!=null?`<p class="small" style="margin-top:12px"><b>${F.inscritos}</b> ${F.inscritos===1?'cliente autorizou':'clientes autorizaram'} receber o folheto por WhatsApp.</p>`:''}</section>`:''}
+  ${cats.map(c=>{const its=cs.filter(x=>x.p.cat===c);return `<section class="card pad"><div class="card-h"><h2>${esc(c)}</h2><button class="btn sm" data-act="fol-todos" data-id="${esc(c)}">${its.every(x=>F.sel[x.p.id])?'Tirar todos':'Escolher todos'}</button></div>
+    <div class="list">${its.map(x=>`<label class="item" style="cursor:pointer"><input type="checkbox" data-fol-sel="${x.p.id}" ${F.sel[x.p.id]?'checked':''} style="width:20px;height:20px;flex:none;accent-color:var(--blue)"><div style="width:40px;flex:none">${mini(x.p)}</div><div class="grow" style="min-width:0"><b>${esc(nomePost(x.p))}</b><div class="xs muted">${esc(x.p.size||'')} · margem ${pct(x.s.margin)}${topDeal.has(x.p.id)?' · <span style="color:var(--orange-ink);font-weight:600">melhor promoção</span>':''}${topMg.has(x.p.id)?' · <span style="color:var(--green-ink);font-weight:600">maior margem</span>':''}${x.s.semPreco?' · sem preço da concorrência':''}</div></div><b class="num">${eur(x.s.price)}</b></label>`).join('')}</div></section>`}).join('')}
+  ${cs.length?'':'<section class="card pad"><div class="empty">Ainda não há produtos com preço de promoção. Carregue uma fatura para a app calcular os preços.</div></section>'}`;
+}
+async function contarInscritos(){
+  if(!REAL.sb||!REAL.loja)return;
+  try{const {count}=await REAL.sb.from('inscricoes_folheto').select('id',{count:'exact',head:true}).eq('loja_id',REAL.loja.id).is('cancelado_em',null);if(count!=null&&S.folheto){S.folheto.inscritos=count;if(S.tab==='folheto')render()}}catch(e){}
+}
+const VIEWS={folheto:vFolheto,resultados:vResultados,fotos:vFotos,home:vHome,invoices:vInvoices,compare:vCompare,promos:vPromos,posts:vPosts,config:vConfig,stores:vStores,log:vLog};
+function vVazio(){return `<div class="ph"><div><h1>${S.tab==='posts'?'Publicações':S.tab==='promos'?'Promoções':S.tab==='folheto'?'Folheto':'Olá, '+esc(S.store.name)}</h1></div></div>
   <div class="drop" style="cursor:default"><span class="big-ic">${IC.camera}</span><h2>Ainda não há produtos</h2>
   <p class="muted small" style="max-width:46ch">Fotografe ou carregue uma fatura de fornecedor. A app lê os custos, compara com o Continente, o Pingo Doce e o Auchan e sugere logo as promoções e as publicações.</p>
   <div class="opts"><button class="btn primary" data-act="tab" data-id="invoices">Ler uma fatura</button></div></div>`}
 function fotosProdutos(){for(const p of S.products)if(p.img&&(!PHOTOS[p.id]||(eSemFundo(p.img)&&PHOTOS[p.id]!==p.img&&!STATIC_PHOTOS[p.id])))PHOTOS[p.id]=p.img}   // foto do site para produtos confirmados
-function render(){fotosProdutos();renderChrome();document.getElementById('main').innerHTML=(!S.products.length&&['home','promos','posts','resultados'].includes(S.tab))?vVazio():VIEWS[S.tab]();bindDrop();save();if(typeof ensureFolhetos==='function')setTimeout(()=>{ensureFolhetos();ensurePrecos()},0)}
+function render(){fotosProdutos();renderChrome();document.getElementById('main').innerHTML=(!S.products.length&&['home','promos','posts','resultados','folheto'].includes(S.tab))?vVazio():VIEWS[S.tab]();bindDrop();save();if(S.tab==='folheto')montarFolheto();if(typeof ensureFolhetos==='function')setTimeout(()=>{ensureFolhetos();ensurePrecos()},0)}
 
 /* actions */
 const ACT={
@@ -1317,6 +1377,13 @@ const ACT={
   approve(id){const p=prod(id),s=suggest(p);setPromo(id,{status:'approved',at:new Date().toISOString(),choice:null,sched:null});log(`Aprovou ${p.name} a ${eur(s.price)} (margem ${pct(s.margin)})`);render();toast('Aprovada. Escolha o design em Publicações.')},
   reject(id){const p=prod(id);setPromo(id,{status:'rejected',at:new Date().toISOString()});log(`Rejeitou a sugestão para ${p.name}`);render();toast('Sugestão rejeitada')},
   undo(id){const p=prod(id);delete S.promos[id];log(`Anulou a decisão sobre ${p.name}`);render();toast('Decisão anulada')},
+  'gerar-folheto'(){const F=folhetoEstado();F.gerado=dadosFolheto(false);F.publicado=null;log(`Gerou o folheto de ${F.ini} a ${F.fim} (${F.gerado.itens.length} produtos)`);render();contarInscritos();setTimeout(()=>document.getElementById('fb-prev')?.scrollIntoView({behavior:'smooth',block:'start'}),60)},
+  async 'publicar-folheto'(){const F=folhetoEstado();if(!REAL.sb||!REAL.loja){toast('O link fica disponível quando a loja tiver conta criada');return}
+    const dados=dadosFolheto(true);const {data,error}=await REAL.sb.from('folhetos_loja').insert({loja_id:REAL.loja.id,ini:F.ini,fim:F.fim,dados}).select('id').single();
+    if(error||!data){toast('Não foi possível criar o link. Tente outra vez.');return}
+    F.publicado={id:data.id,link:linkFolheto(data.id)};log('Criou o link do folheto para as redes');render();toast('Link criado')},
+  'copiar-link-folheto'(){const l=S.folheto?.publicado?.link;if(l)(navigator.clipboard?.writeText(l)||Promise.reject()).then(()=>toast('Link copiado'),()=>toast('Não foi possível copiar'))},
+  'fol-todos'(cat){const F=folhetoEstado(),its=folhetoCands().filter(x=>x.p.cat===cat),todos=its.every(x=>F.sel[x.p.id]);its.forEach(x=>F.sel[x.p.id]=!todos);render()},
   'copiar-legenda'(id){const t=legenda(prod(id));(navigator.clipboard?.writeText(t)||Promise.reject()).then(()=>toast('Legenda copiada'),()=>toast('Não foi possível copiar'))},
   choose(id,el){const i=+el.dataset.idx,p=prod(id),pr=promo(id),sched=pr.sched||nextSlot();setPromo(id,{choice:i,sched});log(`Escolheu "${STYLE_NAMES[i]}" para ${p.name} (${whenTxt(sched)})`);render();toast('Agendado: '+whenTxt(sched))},
   rechoose(id){setPromo(id,{choice:null});render()},
@@ -1388,6 +1455,8 @@ document.addEventListener('change',e=>{
   const t=e.target;
   if(t.id==='inv-photo'||t.id==='inv-pdf'){readInvoiceFile(t.files[0]);t.value='';return}
   if(t.id==='cfg-logo'&&t.files[0]){shrink(t.files[0],160).then(url=>{S.store.logo=url;const cols=extractColors(shrink.last);if(cols){S.store.c1=cols[0];if(cols[1])S.store.c2=cols[1]}render();toast('Logótipo carregado e cores atualizadas')}).catch(()=>toast('Não foi possível ler esta imagem. Experimente um PNG ou JPG.'));return}
+  if(t.dataset.folSel){const F=folhetoEstado();F.sel[t.dataset.folSel]=t.checked;save();render();return}
+  if(t.dataset.fol){const F=folhetoEstado(),v=t.value;if(v){F[t.dataset.fol]=v;if(F.fim<F.ini)F.fim=F.ini}save();render();return}
   if(t.dataset.per&&t.dataset.id){const v=t.value;if(v){const pe=periodo(prod(t.dataset.id)),pt={};if(t.dataset.per==='ini'){pt.ini=v;pt.fim=isoD(pe.fim)<v?v:isoD(pe.fim)}else{pt.ini=isoD(pe.ini);pt.fim=v<pt.ini?pt.ini:v}setPromo(t.dataset.id,pt);save();render()}return}
   if(t.dataset.nomePost!=null){S.nomesPost=S.nomesPost||{};const v=t.value.replace(/\s+/g,' ').trim();const pq=S.products.find(q=>q.name===t.dataset.nomePost)||{name:t.dataset.nomePost};if(v&&v!==nomeCurto(pq.name,marcaDe(pq)))S.nomesPost[t.dataset.nomePost]=v;else delete S.nomesPost[t.dataset.nomePost];save();render();return}
   if(t.dataset.cfg){S.store[t.dataset.cfg]=t.value;render();return}

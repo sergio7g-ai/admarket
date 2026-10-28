@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-PT"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Folheto de promoções</title>
+<meta name="description" content="Folheto de promoções da semana.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap">
+<style>
+:root{--fg:#0F172A;--muted:#64748B;--line:rgba(15,23,42,.12);--c1:#1E40AF;--c2:#F97316}
+*{box-sizing:border-box}
+body{margin:0;background:#F1F5F9;color:var(--fg);font:16px/1.5 Inter,system-ui,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:18px 16px 40px}
+#livro{margin-top:4px}
+.msg{text-align:center;color:var(--muted);padding:60px 0}
+.wa{max-width:520px;margin:26px auto 0;background:#fff;border-radius:18px;padding:20px;box-shadow:0 10px 30px -18px rgba(15,23,42,.35)}
+.wa h2{margin:0 0 4px;font:800 1.2rem "Plus Jakarta Sans",Inter,sans-serif}
+.wa p{margin:0 0 14px;color:var(--muted);font-size:.92rem}
+.wa label{display:block;font-size:.85rem;font-weight:600;margin:10px 0 4px}
+.wa input[type=text],.wa input[type=tel]{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;font:inherit}
+.wa .ok{display:flex;gap:10px;align-items:flex-start;margin-top:14px;font-size:.88rem;color:#334155}
+.wa .ok input{width:20px;height:20px;flex:none;margin-top:2px;accent-color:#16A34A}
+.wa button{margin-top:16px;width:100%;border:0;border-radius:12px;padding:14px;font:700 1rem Inter,sans-serif;background:#16A34A;color:#fff;cursor:pointer}
+.wa button:disabled{opacity:.5;cursor:default}
+.wa .res{margin-top:12px;font-weight:600;text-align:center}
+footer{text-align:center;color:var(--muted);font-size:.78rem;margin-top:26px}
+</style>
+</head><body>
+<main>
+  <div id="livro"><p class="msg">A abrir o folheto…</p></div>
+  <section class="wa" id="wa" hidden>
+    <h2>Receber o folheto no WhatsApp</h2>
+    <p id="wa-txt">Todas as semanas, o folheto de promoções no seu WhatsApp. Pode cancelar quando quiser.</p>
+    <form id="wa-form">
+      <label for="wa-nome">Nome (opcional)</label><input type="text" id="wa-nome" autocomplete="given-name" maxlength="80">
+      <label for="wa-tel">Número de telemóvel</label><input type="tel" id="wa-tel" autocomplete="tel" inputmode="tel" placeholder="912 345 678" required>
+      <label class="ok"><input type="checkbox" id="wa-ok" required><span id="wa-cons"></span></label>
+      <button type="submit" id="wa-btn">Quero receber</button>
+      <div class="res" id="wa-res" role="status"></div>
+    </form>
+  </section>
+  <footer>Promoções limitadas ao stock existente · folheto feito com admarket</footer>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="folheto.js"></script>
+<script>
+(async function () {
+  const SB_URL = 'https://uoumdhwwsxpygobgxfdj.supabase.co';
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVvdW1kaHd3c3hweWdvYmd4ZmRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2NTQ1ODEsImV4cCI6MjEwODIzMDU4MX0.5iahbftWPAG1Gb8DcKKGu9mCkQu45RZUzXr8yCfTz0I';
+  const el = document.getElementById('livro');
+  const id = new URLSearchParams(location.search).get('f');
+  if (!id || !window.supabase) { el.innerHTML = '<p class="msg">Este link de folheto não é válido.</p>'; return; }
+  const sb = supabase.createClient(SB_URL, SB_KEY);
+  const { data, error } = await sb.rpc('folheto_publico', { p_id: id });
+  if (error || !data) { el.innerHTML = '<p class="msg">Não encontrámos este folheto. Peça o link novo à loja.</p>'; return; }
+  const d = data.dados, l = d.loja || {};
+  document.title = 'Folheto · ' + (l.nome || 'Promoções');
+  Folheto.livro(el, d, { max: 480 });
+  // inscrição: o cliente autoriza expressamente receber o folheto por WhatsApp
+  const cons = `Autorizo o ${l.nome || 'supermercado'} a enviar-me o folheto de promoções por WhatsApp para este número. Posso cancelar a qualquer momento respondendo SAIR.`;
+  document.getElementById('wa-cons').textContent = cons;
+  document.getElementById('wa').hidden = false;
+  document.getElementById('wa-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = document.getElementById('wa-btn'), res = document.getElementById('wa-res');
+    if (!document.getElementById('wa-ok').checked) { res.textContent = 'Marque a autorização para continuar.'; return; }
+    btn.disabled = true; res.textContent = '';
+    const { data: ok, error: er } = await sb.rpc('inscrever_folheto', { p_loja: data.loja_id, p_nome: document.getElementById('wa-nome').value, p_tel: document.getElementById('wa-tel').value, p_texto: cons });
+    btn.disabled = false;
+    if (er) { res.style.color = '#B91C1C'; res.textContent = 'Não foi possível guardar. Tente outra vez.'; return; }
+    if (!ok) { res.style.color = '#B91C1C'; res.textContent = 'Verifique o número de telemóvel.'; return; }
+    res.style.color = '#15803D'; res.textContent = 'Pronto! Vai passar a receber o folheto no WhatsApp.';
+    e.target.reset();
+  });
+})();
+</script>
+</body></html>
