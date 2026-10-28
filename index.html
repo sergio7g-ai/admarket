@@ -1600,10 +1600,10 @@ async function lerFaturaReal(file,info){
     if(!REAL.user||!REAL.loja){                    // sem sessão: lê a sério só neste aparelho, não guarda
       step('A ler as linhas (sem IA)…');
       const P=await import('./supabase/functions/ler-fatura/parser.js');
-      const qr=P.lerQR(body.qr),r=P.lerLinhas(body.texto||'',null);
+      const qr=P.lerQR(body.qr),r=P.lerLinhas(body.texto||'',null,qr);
       if(!r.linhas.length)throw new Error(isPdf?'não encontrei linhas de produtos neste PDF':'não consegui ler a foto. Tente com mais luz e a fatura direita');
       S.pending=Object.assign({},S.pending,{stage:'real-review',res:{local:true,metodo:'regras',tokens:0,cabecalho:qr||{},validada_qr:P.bate(r.linhas,qr),
-        linhas:r.linhas.map(l=>({id:null,ean:l.ean,descricao:l.descricao,quantidade:l.quantidade,custo_unit:l.preco_unit*(1-l.desconto_pct/100),produto_id:null}))}});
+        linhas:r.linhas.map(l=>({id:null,ean:l.ean,descricao:l.descricao,quantidade:l.quantidade,custo_unit:l.preco_unit*(1-l.desconto_pct/100),produto_id:null,incerta:!!l.incerta,detalhe:{emb:l.emb,oferta:l.oferta,desconto_global:l.desconto_global,calculado:l.calculado}}))}});
       render();return;
     }
     step('A guardar o original…');
@@ -1629,13 +1629,21 @@ function realReviewHTML(pe){
     <div class="list" style="margin-top:6px">${(r.linhas||[]).map((l,i)=>`<div style="padding:14px 0;border-top:1px solid var(--line,#E5E7EB);display:flex;flex-direction:column;gap:10px">
       <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap"><div style="min-width:0;flex:1 1 220px"><b>${esc(l.descricao)}</b>${l.ean?`<span class="xs muted" style="display:block">${l.ean}</span>`:''}</div>
         <div style="display:flex;gap:8px;align-items:center;flex:none"><span class="xs muted num">${+l.quantidade} ×</span><input class="edit num${l.incerta?' warn':''}" id="rl-cost-${i}" type="number" step="0.0001" min="0" value="${(+l.custo_unit).toFixed(4)}" aria-label="Custo de ${esc(l.descricao)}" style="width:96px"> <span class="xs muted">€ s/ IVA</span></div></div>
-      ${l.incerta?'<span class="chip c-warn" style="align-self:flex-start">Confirme o custo</span>':''}
+      ${detalheTxt(l)?`<span class="xs muted">${detalheTxt(l)}</span>`:''}
+      ${l.incerta?`<span class="chip c-warn" style="align-self:flex-start">${l.detalhe?.emb&&!l.detalhe.emb.un?'Confirme quantas unidades tem cada '+esc(l.detalhe.emb.tipo):'Confirme o custo'}</span>`:''}
       ${r.local?'':`<div><span class="label" style="display:block;margin-bottom:6px">É este produto?</span>${escolhaHTML(pe,i)}</div>`}</div>`).join('')}</div>
     ${r.local?`<div class="acts" style="margin-top:16px"><button class="btn" data-act="real-cancel">Fechar</button></div>
     <div class="real-local"><b class="small">Leitura feita só neste aparelho, nada foi guardado.</b><span class="xs muted">Para guardar estes custos, entre com o seu email e carregue a fatura outra vez.</span>${realBoxHTML()}</div>`
     :`<div class="acts" style="margin-top:16px"><button class="btn" data-act="real-cancel">Descartar</button><button class="btn green" data-act="real-confirm">Confirmar e guardar custos</button></div>
     <p class="xs muted" style="margin-top:12px">Toque na foto do produto certo. Só os produtos confirmados recebem sugestões de promoção; os outros ficam «por confirmar» nas Promoções. O que confirmar fica aprendido: da próxima vez a app já sabe.</p>`}</div>`;
 }
+// explica a conta da linha: «4 CX × 24 un a 14,40 € a caixa · inclui 2 un oferecidas · desconto financeiro de 2% incluído»
+function detalheTxt(l){const d=l.detalhe||{},e=d.emb,p=[];
+  if(e)p.push(e.un?`${+e.qtd} ${esc(e.tipo)} × ${+e.un} un, a ${eur(e.preco)} cada ${esc(e.tipo)}`:`${+e.qtd} ${esc(e.tipo)} a ${eur(e.preco)}: falta saber quantas unidades tem cada ${esc(e.tipo)}`);
+  if(d.oferta)p.push(`inclui ${+d.oferta} un oferecidas`);
+  if(d.desconto_global)p.push(`desconto financeiro de ${String(d.desconto_global).replace('.',',')}% incluído`);
+  if(d.calculado&&!e)p.push('quantidade calculada pelo total da linha');
+  return p.join(' · ')}
 ACT['real-cancel']=async()=>{const id=S.pending?.res?.fatura_id;S.pending=null;render();if(id){await REAL.sb.from('faturas').delete().eq('id',id);await loadFaturas();render()}};
 ACT['real-confirm']=async()=>{
   const pe=S.pending,ls=pe.res.linhas||[];if(REAL.busy)return;REAL.busy=1;

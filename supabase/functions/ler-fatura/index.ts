@@ -46,6 +46,12 @@ function linhasIA(o: any) {
              desconto_pct: d, iva_pct: x[5] ?? null, total: Math.round(q * p * (1 - d / 100) * 100) / 100 };
   }).filter((l: any) => l.descricao && l.preco_unit > 0);
 }
+// o que a leitura fez a cada linha, para o dono perceber a conta (caixas, ofertas, desconto financeiro)
+function detalhe(l: any) {
+  const d: any = {};
+  for (const k of ['emb', 'oferta', 'desconto_global', 'ref', 'calculado']) if (l[k] != null && l[k] !== false) d[k] = l[k];
+  return Object.keys(d).length ? d : null;
+}
 function cabIA(o: any) { return { nifFornecedor: o.nif ? String(o.nif).replace(/\D/g, '') : null, numero: o.num, data: o.data, total: +o.total || null }; }
 
 async function gemini(b64: string, mt: string) {
@@ -161,10 +167,10 @@ Deno.serve(async (req) => {
 
   const rows = linhas.map(l => ({
     fatura_id: fat.id, loja_id: b.loja_id, ean: l.ean, descricao: l.descricao, quantidade: l.quantidade,
-    preco_unit: l.preco_unit, desconto_pct: l.desconto_pct, iva_pct: l.iva_pct, incerta: !!l.incerta,
+    preco_unit: l.preco_unit, desconto_pct: l.desconto_pct, iva_pct: l.iva_pct, incerta: !!l.incerta, detalhe: detalhe(l),
     produto_id: (l.ean && mapE.get(l.ean)) || mapA.get(l.descricao.toLowerCase()) || null,
   }));
-  const { data: ins } = await sb.from('linhas_fatura').insert(rows).select('id,ean,descricao,quantidade,custo_unit,produto_id,incerta');
+  const { data: ins } = await sb.from('linhas_fatura').insert(rows).select('id,ean,descricao,quantidade,custo_unit,produto_id,incerta,detalhe');
 
   return json({ fatura_id: fat.id, metodo, tokens, cabecalho: cab, linhas: ins, validada_qr: bate(linhas, qr) });
 });
