@@ -25,119 +25,130 @@
 .fb-nav{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:14px;font:600 14px var(--fbu);color:#334155}
 .fb-nav button{border:1px solid rgba(15,23,42,.12);background:#fff;border-radius:999px;width:42px;height:42px;font-size:18px;cursor:pointer;color:#0F172A}
 .fb-nav button:disabled{opacity:.35;cursor:default}
-.fp{position:absolute;inset:0;container-type:inline-size;font-family:var(--fbu);color:#0F172A;background:#fff}
+.fp{position:absolute;inset:0;container-type:inline-size;font-family:var(--fbu);color:#0F172A;background:#fff;overflow:hidden}
 .fp *{box-sizing:border-box}
-.fp-band{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;gap:3cqw;padding:0 6cqw}
-.fp-logo{width:11cqw;height:11cqw;border-radius:50%;object-fit:cover;flex:none;display:grid;place-items:center;font:800 4.4cqw var(--fbh)}
-.fp-loja{font:800 4.6cqw/1.15 var(--fbh);letter-spacing:-.01em}
-.fp-cidade{font:500 3.2cqw var(--fbu);opacity:.85}
-.fp-foot{position:absolute;left:6cqw;right:6cqw;bottom:3.5cqw;font:500 2.7cqw/1.3 var(--fbu);color:#64748B;display:flex;justify-content:space-between;gap:3cqw}
-.fp-card{position:absolute;background:#fff;border-radius:3cqw;box-shadow:0 .6cqw 2.4cqw rgba(15,23,42,.12);overflow:hidden;display:flex}
-.fp-ph{display:grid;place-items:center;overflow:hidden}
-.fp-ph img{max-width:100%;max-height:100%;object-fit:contain}
-.fp-ph svg{width:100%;height:100%}
-.fp-ph .fp-letra{height:80%;max-width:80%;aspect-ratio:1;border-radius:3cqw;display:grid;place-items:center;font:800 9cqw var(--fbh);opacity:.9}
-.fp-nome{font:800 3.6cqw/1.12 var(--fbh);letter-spacing:-.015em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.fp-tam{font:500 2.6cqw var(--fbu);color:#64748B;margin-top:.6cqw}
-.fp-preco{font:800 6.4cqw/1 var(--fbh);letter-spacing:-.03em}
-.fp-selo{position:absolute;border-radius:50%;display:grid;place-items:center;text-align:center;transform:rotate(-8deg);box-shadow:0 1cqw 2.5cqw rgba(0,0,0,.18)}
-.fp-chip{display:inline-block;border-radius:99px;padding:.9cqw 2.6cqw;font:800 2.6cqw var(--fbu);letter-spacing:.06em;text-transform:uppercase}
+.fp-logo{width:10cqw;height:10cqw;border-radius:50%;object-fit:cover;flex:none;display:grid;place-items:center;font:800 4cqw var(--fbh)}
+.fp-foot{position:absolute;left:3.5cqw;right:3.5cqw;bottom:2.4cqw;font:500 2.3cqw/1.3 var(--fbu);color:#64748B;display:flex;justify-content:space-between;gap:3cqw}
+.fp-tile{position:absolute;display:flex;flex-direction:column;padding:2cqw 2.2cqw 2cqw;border-right:.25cqw solid #E5E7EB;border-bottom:.25cqw solid #E5E7EB;background:#fff}
+.fp-ph{position:relative;flex:1 1 auto;min-height:0;display:grid;place-items:center}
+.fp-ph>img{max-width:100%;max-height:100%;object-fit:contain}
+.fp-ph>svg{width:100%;height:100%}
+.fp-ph .fp-letra{height:70%;max-width:70%;aspect-ratio:1;border-radius:3cqw;display:grid;place-items:center;font:800 9cqw var(--fbh)}
+.fp-txt{flex:none;padding-top:1.2cqw}
+.fp-nome{font:800 3.1cqw/1.12 var(--fbh);letter-spacing:-.01em;overflow-wrap:break-word}
+.fp-tam{font:500 2.3cqw/1.2 var(--fbu);color:#64748B;margin-top:.5cqw}
+.fp-tag{position:absolute;right:0;bottom:0;display:flex;align-items:flex-start;font-family:var(--fbh);font-weight:800;line-height:.82;letter-spacing:-.04em;padding:1.1cqw 1.4cqw 1cqw 1.6cqw;border-radius:1.2cqw;transform:rotate(-4deg);box-shadow:0 .5cqw 1.4cqw rgba(0,0,0,.22);white-space:nowrap}
+.fp-tag .cw{display:flex;flex-direction:column;align-items:center;margin-left:.08em;letter-spacing:-.02em}
+.fp-tag .c{font-size:.5em}
+.fp-tag .eu{font-size:.36em;margin-top:.12em}
+.fp-fita{position:absolute;left:0;top:2cqw;font:800 2.4cqw var(--fbu);letter-spacing:.08em;text-transform:uppercase;padding:.9cqw 2cqw .9cqw 2.2cqw;border-radius:0 99px 99px 0}
+.fp-gama{position:absolute;left:3cqw;right:3cqw;display:flex;align-items:center;gap:2cqw;font:800 4.2cqw var(--fbh);letter-spacing:-.01em;text-transform:uppercase}
+.fp-gama i{flex:1;height:.5cqw;border-radius:1cqw}
 `;
   function css() { if (document.getElementById('fb-css')) return; const s = document.createElement('style'); s.id = 'fb-css'; s.textContent = CSS; document.head.appendChild(s); }
 
   function foto(it, c1) {
-    if (it.img) return `<img src="${esc(it.img)}" alt="" loading="lazy">`;
+    if (it.img) return `<img src="${esc(it.img)}" alt="">`;
     if (it.arte) return it.arte;
-    return `<span class="fp-letra" style="background:${c1}22;color:${c1}">${esc((it.nome || '?')[0])}</span>`;
+    return `<span class="fp-letra" style="background:${c1}1f;color:${c1}">${esc((it.nome || '?')[0])}</span>`;
   }
   function logoHTML(l, fundo, cor) {
     return l.logo ? `<img class="fp-logo" src="${esc(l.logo)}" alt="" style="background:#fff">` : `<span class="fp-logo" style="background:${fundo};color:${cor}">${esc(iniciais(l.nome))}</span>`;
   }
-  // cartão pequeno (2 por linha): foto em cima, nome, tamanho e preço
-  function cartao(it, x, y, w, h, c) {
-    // a foto ocupa o espaço que sobra do texto (o texto nunca é sacrificado pela foto)
-    return `<div class="fp-card" style="left:${x}cqw;top:${y}cqw;width:${w}cqw;height:${h}cqw;flex-direction:column">
-      <div class="fp-ph" style="flex:1 1 auto;min-height:0;padding:2cqw 2cqw 0">${foto(it, c.c1)}</div>
-      <div class="fp-txt" style="flex:none;display:flex;flex-direction:column;gap:1.2cqw;padding:1.2cqw 2.6cqw 2cqw">
-        <div><div class="fp-nome">${esc(it.nome)}</div>${it.tamanho ? `<div class="fp-tam">${esc(it.tamanho)}</div>` : ''}</div>
-        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:1cqw"><span class="fp-chip" style="background:${c.c2};color:${c.i2};font-size:2.1cqw;padding:.7cqw 1.8cqw">Promo</span><span class="fp-preco" style="color:${c.pc}">${eur(it.preco)}</span></div>
-      </div></div>`;
+  // etiqueta de preço como nos folhetos: euros grandes, cêntimos em cima e o € por baixo
+  function etiqueta(v, tam, c) {
+    const [e, ct] = (Math.round(v * 100) / 100).toFixed(2).split('.');
+    return `<div class="fp-tag" style="font-size:${tam}cqw;background:${c.tag};color:${c.tagInk}"><span>${e}</span><span class="cw"><span class="c">,${ct}</span><span class="eu">€</span></span></div>`;
   }
-  // cartão de destaque (largura toda): foto à esquerda com a etiqueta, nome grande e preço em grande
-  function destaque(it, x, y, w, h, c, grande) {
-    const s = grande ? 1.25 : 1;
-    return `<div class="fp-card" style="left:${x}cqw;top:${y}cqw;width:${w}cqw;height:${h}cqw;align-items:stretch">
-      <div class="fp-ph" style="width:44%;padding:3cqw;position:relative">${foto(it, c.c1)}<span class="fp-chip" style="position:absolute;left:3cqw;top:3cqw;background:${c.c1};color:${c.i1}">Destaque</span></div>
-      <div class="fp-txt" style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:2.5cqw 4cqw 2.5cqw 1cqw;min-width:0;min-height:0;overflow:hidden">
-        <div class="fp-nome" style="font-size:${4.8 * s}cqw;-webkit-line-clamp:3">${esc(it.nome)}</div>
-        ${it.tamanho ? `<div class="fp-tam" style="font-size:${3 * s}cqw">${esc(it.tamanho)}</div>` : ''}
-        <div class="fp-preco" style="color:${c.pc};font-size:${9 * s}cqw;margin-top:2.5cqw">${eur(it.preco)}</div>
-      </div></div>`;
+  // produto numa grelha: foto grande com a etiqueta do preço por cima, nome e tamanho por baixo (nada é cortado: o texto encolhe se for preciso)
+  function produto(it, x, y, w, h, c, o = {}) {
+    const fita = o.fita ? `<span class="fp-fita" style="background:${c.c2};color:${c.i2}">${o.fita}</span>` : '';
+    if (o.lado) return `<div class="fp-tile" data-lado style="left:${x}cqw;top:${y}cqw;width:${w}cqw;height:${h}cqw;flex-direction:row;gap:2cqw;align-items:stretch;padding:3cqw">
+      <div class="fp-ph" style="flex:0 0 52%">${foto(it, c.c1)}</div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;position:relative">
+        <div class="fp-txt"><div class="fp-nome" style="font-size:${o.nome || 5.4}cqw">${esc(it.nome)}</div>${it.tamanho ? `<div class="fp-tam" style="font-size:3.2cqw">${esc(it.tamanho)}</div>` : ''}</div>
+        <div style="position:relative;height:${o.tag * 1.15}cqw;margin-top:3cqw">${etiqueta(it.preco, o.tag, c).replace('right:0;', '').replace('class="fp-tag" style="', 'class="fp-tag" style="left:0;right:auto;')}</div>
+      </div>${fita}</div>`;
+    return `<div class="fp-tile" style="left:${x}cqw;top:${y}cqw;width:${w}cqw;height:${h}cqw">
+      <div class="fp-ph">${foto(it, c.c1)}${etiqueta(it.preco, o.tag || 7.5, c)}</div>
+      <div class="fp-txt"><div class="fp-nome" style="${o.nome ? `font-size:${o.nome}cqw` : ''}">${esc(it.nome)}</div>${it.tamanho ? `<div class="fp-tam">${esc(it.tamanho)}</div>` : ''}</div>${fita}</div>`;
   }
 
   function paginas(d) {
     const l = d.loja || {}, c1 = l.c1 || '#1E40AF', c2 = l.c2 || '#F97316', i1 = ink(c1), i2 = ink(c2);
-    const c = { c1, c2, i1, i2, pc: i1 === '#FFFFFF' ? c1 : '#0F172A' };
+    const c = { c1, c2, i1, i2, pc: i1 === '#FFFFFF' ? c1 : '#0F172A', tag: '#FFD60A', tagInk: i1 === '#FFFFFF' ? c1 : '#B91C1C' };
     const per = `${dd(d.ini)} a ${dd(d.fim)}`, itens = (d.itens || []).slice();
-    const rodape = n => `<div class="fp-foot"><span>Válido de ${per} · limitado ao stock existente</span><span>${n}</span></div>`;
+    const rodape = n => `<div class="fp-foot"><span>Válido de ${per} · limitado ao stock existente · imagens ilustrativas</span><span>${n}</span></div>`;
     const pags = [];
-    // capa: o produto mais forte em grande e os dois seguintes
-    const capa = itens.slice(0, 3);
-    pags.push(`<div class="fp" style="background:${c1}">
-      <div class="fp-band" style="top:6cqw;color:${i1}">${logoHTML(l, i1, c1)}<div><div class="fp-loja">${esc(l.nome)}</div>${l.cidade ? `<div class="fp-cidade">${esc(l.cidade)}</div>` : ''}</div></div>
-      <div style="position:absolute;left:6cqw;right:6cqw;top:22cqw;color:${i1}"><span class="fp-chip" style="background:${c2};color:${i2};font-size:3.2cqw">${per}</span>
-        <div style="font:800 13cqw/.95 var(--fbh);letter-spacing:-.04em;margin-top:2.5cqw">Promoções</div><div style="font:600 4.6cqw var(--fbu);opacity:.9;margin-top:1cqw">da semana</div></div>
-      ${capa[0] ? destaque(capa[0], 6, 52, 88, 44, c, true) : ''}
-      ${capa[1] ? cartao(capa[1], 6, 99, 42.5, 34, c) : ''}${capa[2] ? cartao(capa[2], 51.5, 99, 42.5, 34, c) : ''}
-      <div class="fp-foot" style="color:${i1};opacity:.85"><span>Válido de ${per} · limitado ao stock existente</span></div></div>`);
-    // por gama, em fluxo contínuo: cada gama tem um título; se tiver 3 ou mais produtos abre com o mais forte em destaque.
-    // Várias gamas pequenas partilham a mesma página para não haver páginas meio vazias.
-    const resto = itens.slice(3), cats = [];
-    for (const it of resto) { const k = it.cat || 'Outros'; let g = cats.find(x => x.k === k); if (!g) cats.push(g = { k, its: [] }); g.its.push(it); }
+    // ---- capa: cabeçalho com a loja e as datas, o produto mais forte em grande e mais três ----
+    const capa = itens.splice(0, Math.min(4, itens.length));
+    const W3 = 94 / 3;
+    pags.push(`<div class="fp">
+      <div style="position:absolute;left:0;right:0;top:0;height:46cqw;background:${c1}"></div>
+      <div style="position:absolute;right:-12cqw;top:-10cqw;width:52cqw;height:52cqw;border-radius:50%;background:${c2};opacity:.95"></div>
+      <div style="position:absolute;left:5cqw;right:5cqw;top:5cqw;display:flex;align-items:center;gap:3cqw;color:${i1}">${logoHTML(l, i1, c1)}<div style="min-width:0"><div style="font:800 4.4cqw/1.12 var(--fbh)">${esc(l.nome)}</div>${l.cidade ? `<div style="font:500 3cqw var(--fbu);opacity:.85">${esc(l.cidade)}</div>` : ''}</div></div>
+      <div style="position:absolute;left:5cqw;top:20cqw;color:${i1};font:800 15cqw/.9 var(--fbh);letter-spacing:-.05em;text-transform:uppercase">Promoções</div>
+      <div style="position:absolute;left:5cqw;top:35cqw;background:${c.tag};color:${c.tagInk};font:800 4cqw var(--fbh);padding:1.2cqw 3cqw;border-radius:1.2cqw;transform:rotate(-2deg);text-transform:uppercase">De ${per}</div>
+      ${capa[0] ? produto(capa[0], 3, 47, 94, 50, c, { lado: true, tag: 15, nome: 6, fita: 'Destaque' }).replace('border-right:.25cqw solid #E5E7EB;', '') : ''}
+      ${capa.slice(1).map((it, k) => produto(it, 3 + k * W3, 98, W3, 36, c, { tag: 6.5 })).join('')}
+      ${rodape(1)}</div>`);
+    // ---- interior: por gama, grelha de 3 colunas; a gama com 4+ produtos abre com o mais forte em 2×2 ----
+    const cats = [];
+    for (const it of itens) { const k = it.cat || 'Outros'; let g = cats.find(x => x.k === k); if (!g) cats.push(g = { k, its: [] }); g.its.push(it); }
     const ord = k => { const i = ORDEM_CAT.indexOf(k); return i < 0 ? 99 : i; };
     cats.sort((a, b) => ord(a.k) - ord(b.k));
-    const TOPO = 18, FUNDO = 129, TIT = 8, LIN = 33, DEST = 37;
+    const TOPO = 15, FUNDO = 135.5, TIT = 7, R = 37;
     let corpo = '', y = TOPO;
     const fecha = () => { if (!corpo) return; const n = pags.length + 1;
-      pags.push(`<div class="fp" style="background:#F8FAFC">
-        <div class="fp-band" style="height:13cqw;background:${c1};color:${i1}">${logoHTML(l, i1, c1).replace('fp-logo"', 'fp-logo" style="width:8cqw;height:8cqw;font-size:3.2cqw"')}<div class="fp-loja" style="font-size:4cqw">${esc(l.nome)}</div><span style="margin-left:auto;font:700 3cqw var(--fbu);opacity:.9;white-space:nowrap">${per}</span></div>
+      pags.push(`<div class="fp">
+        <div style="position:absolute;left:0;right:0;top:0;height:12cqw;background:${c1};color:${i1};display:flex;align-items:center;gap:2.5cqw;padding:0 3.5cqw">${logoHTML(l, i1, c1).replace('class="fp-logo"', 'class="fp-logo" style="width:7.5cqw;height:7.5cqw;font-size:3cqw"')}<div style="font:800 3.6cqw/1.1 var(--fbh);min-width:0">${esc(l.nome)}</div>
+          <span style="margin-left:auto;background:${c.tag};color:${c.tagInk};font:800 3cqw var(--fbh);padding:1cqw 2.2cqw;border-radius:1cqw;white-space:nowrap;text-transform:uppercase">De ${per}</span></div>
         ${corpo}${rodape(n)}</div>`); corpo = ''; y = TOPO; };
-    const titulo = k => `<div style="position:absolute;left:6cqw;right:6cqw;top:${y}cqw;height:${TIT - 2}cqw;display:flex;align-items:center;gap:2.5cqw;font:800 4.6cqw var(--fbh);color:${c.pc};letter-spacing:-.02em"><span style="width:1.4cqw;height:5cqw;border-radius:1cqw;background:${c2}"></span>${esc(k)}<span style="flex:1;height:.3cqw;background:rgba(15,23,42,.08)"></span></div>`;
+    const titulo = k => { corpo += `<div class="fp-gama" style="top:${y}cqw;height:${TIT - 1}cqw;color:${c.pc}">${esc(k)}<i style="background:${c2}"></i></div>`; y += TIT; };
     for (const g of cats) {
       const its = g.its.slice();
-      // a gama começa numa página nova se não couber o título e pelo menos uma linha
-      if (y + TIT + LIN - 3 > FUNDO) fecha();
-      corpo += titulo(g.k); y += TIT;
-      if (its.length >= 3 && y + DEST - 3 <= FUNDO) { corpo += destaque(its.shift(), 6, y, 88, DEST - 3, c, false); y += DEST; }
-      while (its.length) {
-        if (y + LIN - 3 > FUNDO) { fecha(); corpo += titulo(g.k + ' (cont.)'); y += TIT; }
-        const a = its.shift(), b = its.shift();
-        corpo += cartao(a, 6, y, 42.5, LIN - 3, c); if (b) corpo += cartao(b, 51.5, y, 42.5, LIN - 3, c);
-        y += LIN;
+      if (y + TIT + R > FUNDO) fecha();
+      titulo(g.k);
+      if (its.length >= 4 && y + 2 * R <= FUNDO) {
+        corpo += produto(its.shift(), 3, y, 2 * W3, 2 * R, c, { tag: 12, nome: 4.6, fita: 'Destaque' });
+        for (let k = 0; k < 2 && its.length; k++) corpo += produto(its.shift(), 3 + 2 * W3, y + k * R, W3, R, c, {});
+        y += 2 * R;
       }
-      y += 1;
+      while (its.length) {
+        if (y + R > FUNDO) { fecha(); titulo(g.k + ' (cont.)'); }
+        its.splice(0, 3).forEach((it, k) => { corpo += produto(it, 3 + k * W3, y, W3, R, c, {}); });
+        y += R;
+      }
+      y += 1.5;
     }
     fecha();
-    // contracapa: a loja e o convite para receber o folheto no WhatsApp
-    pags.push(`<div class="fp" style="background:${c2};color:${i2}">
-      <div style="position:absolute;left:8cqw;right:8cqw;top:16cqw"><div style="font:800 12cqw/1 var(--fbh);letter-spacing:-.04em">Até já!</div>
-        <div style="font:500 4.2cqw/1.4 var(--fbu);margin-top:4cqw">Promoções válidas de ${per}, limitadas ao stock existente. Imagens meramente ilustrativas.</div></div>
-      <div style="position:absolute;left:8cqw;right:8cqw;top:62cqw;background:#fff;color:#0F172A;border-radius:4cqw;padding:5cqw;box-shadow:0 2cqw 5cqw rgba(0,0,0,.15)">
-        <div style="font:800 5.4cqw/1.15 var(--fbh)">Receba o folheto no WhatsApp</div>
-        <div style="font:500 3.4cqw/1.4 var(--fbu);color:#475569;margin-top:2cqw">${d.inscrever ? 'Abra o link do folheto nas nossas redes e toque em «Receber no WhatsApp». Só enviamos o folheto da semana e pode cancelar quando quiser.' : 'Peça na caixa para receber o folheto da semana.'}</div></div>
-      <div style="position:absolute;left:8cqw;right:8cqw;bottom:12cqw;display:flex;align-items:center;gap:4cqw">${logoHTML(l, c1, i1)}<div><div class="fp-loja">${esc(l.nome)}</div><div class="fp-cidade">${esc([l.morada, l.cidade].filter(Boolean).join(' · '))}${l.ig ? ' · ' + esc(l.ig) : ''}</div></div></div></div>`);
+    // ---- contracapa ----
+    pags.push(`<div class="fp" style="background:${c1};color:${i1}">
+      <div style="position:absolute;left:-14cqw;bottom:-16cqw;width:70cqw;height:70cqw;border-radius:50%;background:${c2};opacity:.95"></div>
+      <div style="position:absolute;left:7cqw;right:7cqw;top:12cqw"><div style="font:800 13cqw/.95 var(--fbh);letter-spacing:-.05em;text-transform:uppercase">Até já!</div>
+        <div style="font:500 4cqw/1.4 var(--fbu);margin-top:4cqw;opacity:.92">Promoções válidas de ${per}, limitadas ao stock existente. Imagens meramente ilustrativas.</div></div>
+      <div style="position:absolute;left:7cqw;right:7cqw;top:62cqw;background:#fff;color:#0F172A;border-radius:3cqw;padding:5cqw;box-shadow:0 2cqw 5cqw rgba(0,0,0,.18)">
+        <div style="font:800 5.2cqw/1.15 var(--fbh)">Receba o folheto no WhatsApp</div>
+        <div style="font:500 3.3cqw/1.45 var(--fbu);color:#475569;margin-top:2cqw">${d.inscrever ? 'Abra o link do folheto nas nossas redes e toque em «Quero receber». Só enviamos o folheto da semana e pode cancelar quando quiser.' : 'Peça na caixa para receber o folheto da semana.'}</div></div>
+      <div style="position:absolute;left:7cqw;right:7cqw;bottom:9cqw;display:flex;align-items:center;gap:3cqw;color:${i2}">${logoHTML(l, '#fff', c1)}<div><div style="font:800 4.4cqw/1.15 var(--fbh)">${esc(l.nome)}</div><div style="font:500 3cqw var(--fbu);opacity:.9">${esc([l.morada, l.cidade].filter(Boolean).join(' · '))}${l.ig ? ' · ' + esc(l.ig) : ''}</div></div></div></div>`);
     return pags;
   }
 
-  // encaixe: se um nome ficar cortado ou o texto não couber no cartão, nome e preço encolhem aos poucos
+  // encaixe: nenhum nome fica cortado; se o texto não couber, o nome encolhe; a foto nunca fica com menos de 40% do produto
   function encaixar(root) {
-    for (const card of root.querySelectorAll('.fp-card')) {
-      const txt = card.querySelector('.fp-txt'), nome = card.querySelector('.fp-nome'), preco = card.querySelector('.fp-preco');
-      if (!txt || !nome) continue;
-      const ph = card.querySelector('.fp-ph'), alto = card.style.flexDirection === 'column';
-      const mal = () => nome.scrollHeight > nome.clientHeight + 1 || txt.scrollHeight > txt.clientHeight + 1 || (alto && ph && ph.getBoundingClientRect().height < card.getBoundingClientRect().height * 0.3) || (preco && preco.scrollWidth > preco.clientWidth + 1) || (preco && preco.getBoundingClientRect().right > card.getBoundingClientRect().right + 1);
-      for (let k = 0; k < 14 && mal(); k++) for (const t of [nome, preco].filter(Boolean)) t.style.fontSize = (parseFloat(getComputedStyle(t).fontSize) * 0.93) + 'px';
-      card.dataset.encaixe = mal() ? 'falha' : 'ok';
+    for (const t of root.querySelectorAll('.fp-tile')) {
+      const nome = t.querySelector('.fp-nome'), tam = t.querySelector('.fp-tam'), ph = t.querySelector('.fp-ph'), tag = t.querySelector('.fp-tag');
+      if (!nome || !ph) continue;
+      const T = t.getBoundingClientRect();
+      const mal = () => { const P = ph.getBoundingClientRect(), G = tag?.getBoundingClientRect();
+        return t.scrollHeight > t.clientHeight + 1 || nome.scrollWidth > nome.clientWidth + 1
+          || (!t.hasAttribute('data-lado') && P.height < T.height * 0.42)
+          || (G && (G.left < T.left - 1 || G.right > T.right + 1)); };
+      for (let k = 0; k < 16 && mal(); k++) {
+        for (const e of [nome, tam].filter(Boolean)) e.style.fontSize = (parseFloat(getComputedStyle(e).fontSize) * 0.93) + 'px';
+        if (k > 5 && tag) tag.style.fontSize = (parseFloat(getComputedStyle(tag).fontSize) * 0.94) + 'px';
+      }
+      t.dataset.encaixe = mal() ? 'falha' : 'ok';
     }
   }
   // flipbook: em ecrãs largos abre em duas páginas (capa sozinha à direita); em telemóvel vira uma página de cada vez

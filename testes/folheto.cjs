@@ -36,23 +36,24 @@ const LONGOS = [
     const info = await pg.evaluate(() => {
       const probs = []; const pages = [...document.querySelectorAll('#fb-prev .fp')];
       pages.forEach((p, i) => { const P = p.getBoundingClientRect();
-        for (const c of p.querySelectorAll('.fp-card,.fp-foot,.fp-band')) { const r = c.getBoundingClientRect(); if (r.left < P.left - 1 || r.right > P.right + 1 || r.top < P.top - 1 || r.bottom > P.bottom + 1) probs.push(`pág ${i + 1}: ${c.className} sai da página`); }
-        const cs = [...p.querySelectorAll('.fp-card')].map(c => c.getBoundingClientRect());
+        for (const c of p.querySelectorAll('.fp-tile,.fp-foot')) { const r = c.getBoundingClientRect(); if (r.left < P.left - 1 || r.right > P.right + 1 || r.top < P.top - 1 || r.bottom > P.bottom + 1) probs.push(`pág ${i + 1}: ${c.className} sai da página`); }
+        const cs = [...p.querySelectorAll('.fp-tile')].map(c => c.getBoundingClientRect());
         for (let a = 0; a < cs.length; a++) for (let z = a + 1; z < cs.length; z++) { const w = Math.min(cs[a].right, cs[z].right) - Math.max(cs[a].left, cs[z].left), h = Math.min(cs[a].bottom, cs[z].bottom) - Math.max(cs[a].top, cs[z].top); if (w > 1 && h > 1) probs.push(`pág ${i + 1}: cartões sobrepostos`); }
         const foot = p.querySelector('.fp-foot')?.getBoundingClientRect(); if (foot) for (const r of cs) if (r.bottom > foot.top + 1 && r.top < foot.bottom) probs.push(`pág ${i + 1}: cartão por cima do rodapé`);
-        for (const c of p.querySelectorAll('.fp-card')) if (c.dataset.encaixe === 'falha') probs.push(`pág ${i + 1}: texto não cabe no cartão (${c.querySelector('.fp-nome')?.textContent})`);
-        for (const t of p.querySelectorAll('.fp-preco')) if (t.scrollWidth > t.clientWidth + 1 || t.getBoundingClientRect().right > t.closest('.fp-card,.fp').getBoundingClientRect().right + 1) probs.push(`pág ${i + 1}: preço cortado`);
+        for (const c of p.querySelectorAll('.fp-tile')) if (c.dataset.encaixe === 'falha') probs.push(`pág ${i + 1}: texto não cabe no cartão (${c.querySelector('.fp-nome')?.textContent})`);
+        for (const t of p.querySelectorAll('.fp-tag')) { const r = t.getBoundingClientRect(), T = t.closest('.fp-tile,.fp').getBoundingClientRect(); if (r.left < T.left - 1 || r.right > T.right + 1) probs.push(`pág ${i + 1}: preço cortado`); }
       });
-      return { paginas: pages.length, folhas: document.querySelectorAll('#fb-prev .fb-sheet').length, probs };
+      const nomes = pages.flatMap(p => [...p.querySelectorAll('.fp-nome')].map(n => n.textContent));
+      return { produtos: nomes.length, paginas: pages.length, folhas: document.querySelectorAll('#fb-prev .fb-sheet').length, probs };
     });
     // virar todas as páginas
     let viradas = 0; for (let k = 0; k < 40; k++) { const dis = await pg.$eval('[data-fb="seg"]', b => b.disabled); if (dis) break; await pg.click('[data-fb="seg"]'); viradas++; await pg.waitForTimeout(120); }
     if (SAIDA) { await pg.click('[data-fb="ant"]').catch(() => {}); for (let k = 0; k < viradas; k++) await pg.click('[data-fb="ant"]').catch(() => {}); await pg.waitForTimeout(900); await pg.evaluate(() => { const e = document.getElementById('fb-prev'); scrollTo(0, e.getBoundingClientRect().top + scrollY - 130); }); await pg.waitForTimeout(100); await (await pg.$('#fb-prev')).screenshot({ path: path.join(SAIDA, `folheto-${nome}-capa.png`) });
       await pg.click('[data-fb="seg"]'); await pg.waitForTimeout(900); await pg.evaluate(() => { const e = document.getElementById('fb-prev'); scrollTo(0, e.getBoundingClientRect().top + scrollY - 130); }); await pg.waitForTimeout(100); await (await pg.$('#fb-prev')).screenshot({ path: path.join(SAIDA, `folheto-${nome}-p2.png`) });
       await pg.click('[data-fb="seg"]'); await pg.waitForTimeout(900); await pg.evaluate(() => { const e = document.getElementById('fb-prev'); scrollTo(0, e.getBoundingClientRect().top + scrollY - 130); }); await pg.waitForTimeout(100); await (await pg.$('#fb-prev')).screenshot({ path: path.join(SAIDA, `folheto-${nome}-p3.png`) }); }
-    console.log(`${nome}: ${n} produtos possíveis · ${info.paginas} páginas em ${info.folhas} folhas · ${viradas} viragens · ${info.probs.length} problemas${erros.length ? ' · ERROS JS: ' + erros.join(' | ') : ''}`);
+    console.log(`${nome}: ${n} produtos possíveis · ${info.produtos} no folheto · ${info.paginas} páginas em ${info.folhas} folhas · ${viradas} viragens · ${info.probs.length} problemas${erros.length ? ' · ERROS JS: ' + erros.join(' | ') : ''}`);
     for (const x of info.probs) console.log('   ✗', x);
-    falhas += info.probs.length + erros.length + (info.paginas < 2 ? 1 : 0);
+    falhas += info.probs.length + erros.length + (info.paginas < 2 ? 1 : 0) + (info.produtos !== n ? 1 : 0);
     await pg.close();
   }
   await b.close();
