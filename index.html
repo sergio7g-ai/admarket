@@ -1479,7 +1479,12 @@ document.addEventListener('change',e=>{
   if(t.dataset.cfg){S.store[t.dataset.cfg]=t.value;render();return}
   if(t.dataset.margin){const v=Math.max(0,Math.min(80,parseInt(t.value)||0));S.margins[t.dataset.margin]=v;render();toast(`Margem de ${t.dataset.margin.toLowerCase()}: ${v}%`)}
 });
-document.addEventListener('input',e=>{const t=e.target;if(t.dataset.cfg&&t.type==='text'){S.store[t.dataset.cfg]=t.value;save()}});
+document.addEventListener('input',e=>{const t=e.target;if(t.dataset.cfg&&t.type==='text'){S.store[t.dataset.cfg]=t.value;save()}
+  // revisão da fatura: o dono diz quantas unidades tem cada caixa/fardo → custo por unidade e quantidade atualizam logo
+  if(t.dataset.rlUn!=null){const i=+t.dataset.rlUn,l=S.pending?.res?.linhas?.[i],un=parseInt(t.value);if(!l?.detalhe?.emb)return;
+    const c=document.getElementById('rl-cost-'+i),q=document.getElementById('rl-q-'+i);
+    if(un>0){c.value=(l.custo_unit/un).toFixed(4);q.textContent=(l.detalhe.emb.qtd*un)+' ×';t.classList.remove('warn');c.classList.remove('warn')}
+    else{c.value=(+l.custo_unit).toFixed(4);q.textContent=(+l.quantidade)+' ×'}}});
 function bindDrop(){const d=document.getElementById('drop');if(!d)return;
   d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('over')});d.addEventListener('dragleave',()=>d.classList.remove('over'));
   d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('over');readInvoiceFile(e.dataTransfer.files[0])})}
@@ -1628,9 +1633,9 @@ function realReviewHTML(pe){
     <span class="xs muted">${esc(c.numero||'')} ${c.data?'· '+c.data:''} ${c.total?'· total '+eur(c.total):''} · ${how}</span></div></div></div>
     <div class="list" style="margin-top:6px">${(r.linhas||[]).map((l,i)=>`<div style="padding:14px 0;border-top:1px solid var(--line,#E5E7EB);display:flex;flex-direction:column;gap:10px">
       <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap"><div style="min-width:0;flex:1 1 220px"><b>${esc(l.descricao)}</b>${l.ean?`<span class="xs muted" style="display:block">${l.ean}</span>`:''}</div>
-        <div style="display:flex;gap:8px;align-items:center;flex:none"><span class="xs muted num">${+l.quantidade} ×</span><input class="edit num${l.incerta?' warn':''}" id="rl-cost-${i}" type="number" step="0.0001" min="0" value="${(+l.custo_unit).toFixed(4)}" aria-label="Custo de ${esc(l.descricao)}" style="width:96px"> <span class="xs muted">€ s/ IVA</span></div></div>
+        <div style="display:flex;gap:8px;align-items:center;flex:none"><span class="xs muted num" id="rl-q-${i}">${+l.quantidade} ×</span><input class="edit num${l.incerta?' warn':''}" id="rl-cost-${i}" type="number" step="0.0001" min="0" value="${(+l.custo_unit).toFixed(4)}" aria-label="Custo de ${esc(l.descricao)}" style="width:96px"> <span class="xs muted">€ s/ IVA</span></div></div>
       ${detalheTxt(l)?`<span class="xs muted">${detalheTxt(l)}</span>`:''}
-      ${l.incerta?`<span class="chip c-warn" style="align-self:flex-start">${l.detalhe?.emb&&!l.detalhe.emb.un?'Confirme quantas unidades tem cada '+esc(l.detalhe.emb.tipo):'Confirme o custo'}</span>`:''}
+      ${l.detalhe?.emb&&!l.detalhe.emb.un?`<label class="small" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="chip c-warn">Quantas unidades tem cada ${embNome(l.detalhe.emb.tipo,1)}?</span><input class="edit num warn" type="number" min="1" step="1" inputmode="numeric" data-rl-un="${i}" placeholder="ex.: 6" style="width:72px"></label>`:l.incerta?'<span class="chip c-warn" style="align-self:flex-start">Confirme o custo</span>':''}
       ${r.local?'':`<div><span class="label" style="display:block;margin-bottom:6px">É este produto?</span>${escolhaHTML(pe,i)}</div>`}</div>`).join('')}</div>
     ${r.local?`<div class="acts" style="margin-top:16px"><button class="btn" data-act="real-cancel">Fechar</button></div>
     <div class="real-local"><b class="small">Leitura feita só neste aparelho, nada foi guardado.</b><span class="xs muted">Para guardar estes custos, entre com o seu email e carregue a fatura outra vez.</span>${realBoxHTML()}</div>`
@@ -1638,8 +1643,10 @@ function realReviewHTML(pe){
     <p class="xs muted" style="margin-top:12px">Toque na foto do produto certo. Só os produtos confirmados recebem sugestões de promoção; os outros ficam «por confirmar» nas Promoções. O que confirmar fica aprendido: da próxima vez a app já sabe.</p>`}</div>`;
 }
 // explica a conta da linha: «4 CX × 24 un a 14,40 € a caixa · inclui 2 un oferecidas · desconto financeiro de 2% incluído»
+const EMB_NOME={CX:['caixa','caixas'],CXA:['caixa','caixas'],CXS:['caixa','caixas'],FD:['fardo','fardos'],FDO:['fardo','fardos'],PK:['pack','packs'],PACK:['pack','packs'],TAB:['tabuleiro','tabuleiros'],SC:['saco','sacos'],GRF:['grade','grades'],EMB:['embalagem','embalagens']};
+const embNome=(t,n)=>{const e=EMB_NOME[String(t||'').toUpperCase()]||EMB_NOME.EMB;return n===1?e[0]:e[1]};
 function detalheTxt(l){const d=l.detalhe||{},e=d.emb,p=[];
-  if(e)p.push(e.un?`${+e.qtd} ${esc(e.tipo)} × ${+e.un} un, a ${eur(e.preco)} cada ${esc(e.tipo)}`:`${+e.qtd} ${esc(e.tipo)} a ${eur(e.preco)}: falta saber quantas unidades tem cada ${esc(e.tipo)}`);
+  if(e)p.push(e.un?`${+e.qtd} ${embNome(e.tipo,+e.qtd)} × ${+e.un} un, a ${eur(e.preco)} cada ${embNome(e.tipo,1)}`:`${+e.qtd} ${embNome(e.tipo,+e.qtd)} a ${eur(e.preco)} cada`);
   if(d.oferta)p.push(`inclui ${+d.oferta} un oferecidas`);
   if(d.desconto_global)p.push(`desconto financeiro de ${String(d.desconto_global).replace('.',',')}% incluído`);
   if(d.calculado&&!e)p.push('quantidade calculada pelo total da linha');
@@ -1650,7 +1657,8 @@ ACT['real-confirm']=async()=>{
   try{
     for(let i=0;i<ls.length;i++){
       const l=ls[i],custo=parseFloat(document.getElementById('rl-cost-'+i).value);
-      const upd={};
+      const upd={},un=parseInt(document.querySelector(`[data-rl-un="${i}"]`)?.value);
+      if(un>0&&l.detalhe?.emb){upd.quantidade=l.detalhe.emb.qtd*un;upd.incerta=false;upd.detalhe={...l.detalhe,emb:{...l.detalhe.emb,un}};l.quantidade=upd.quantidade}
       if(Math.abs(custo-l.custo_unit)>1e-4)Object.assign(upd,{preco_unit:custo,desconto_pct:0});
       if(!l.produto_id){const {data:p}=await REAL.sb.from('produtos').insert({loja_id:REAL.loja.id,ean:l.ean,nome:l.descricao}).select('id').single();if(p)upd.produto_id=p.id}
       if(Object.keys(upd).length)await REAL.sb.from('linhas_fatura').update(upd).eq('id',l.id);
