@@ -134,7 +134,7 @@ function resolver(p) {
       }
     }
   }
-  if (!melhor) {
+  if (!melhor && p.ean) {             // só em linhas de produto (com código de barras)
     // o OCR trocou um algarismo do preço (0,95 → 0,90): se total ÷ qtd dá cêntimos certos, é esse o custo (é o que interessa)
     for (const Q of qs) {
       if (!Number.isInteger(Q.x) || Q.x < 1 || Q.x > 999 || IVAS.includes(Q.x) && qs.length > 1 && Q.i > 0) continue;
@@ -143,6 +143,7 @@ function resolver(p) {
     }
     if (!melhor) return null;
   }
+  if (!melhor) return null;
   const iva = v.slice(0, n - 1).find(x => IVAS.includes(x)) ?? null;
   return { ean: p.ean, descricao: melhor.qExtra ? p.desc.slice(0, -mq[0].length).trim() : p.desc, quantidade: melhor.q, preco_unit: melhor.pr,
            desconto_pct: melhor.d, iva_pct: iva, total: tot, ...(melhor.calculado ? { calculado: true } : {}) };
