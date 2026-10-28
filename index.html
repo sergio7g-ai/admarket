@@ -1189,7 +1189,7 @@ function vVazio(){return `<div class="ph"><div><h1>${S.tab==='posts'?'Publicaç�
   <div class="drop" style="cursor:default"><span class="big-ic">${IC.camera}</span><h2>Ainda não há produtos</h2>
   <p class="muted small" style="max-width:46ch">Fotografe ou carregue uma fatura de fornecedor. A app lê os custos, compara com o Continente, o Pingo Doce e o Auchan e sugere logo as promoções e as publicações.</p>
   <div class="opts"><button class="btn primary" data-act="tab" data-id="invoices">Ler uma fatura</button></div></div>`}
-function fotosProdutos(){for(const p of S.products)if(p.img&&!PHOTOS[p.id])PHOTOS[p.id]=p.img}   // foto do site para produtos confirmados
+function fotosProdutos(){for(const p of S.products)if(p.img&&(!PHOTOS[p.id]||(eSemFundo(p.img)&&PHOTOS[p.id]!==p.img&&!STATIC_PHOTOS[p.id])))PHOTOS[p.id]=p.img}   // foto do site para produtos confirmados
 function render(){fotosProdutos();renderChrome();document.getElementById('main').innerHTML=(!S.products.length&&['home','promos','posts','resultados'].includes(S.tab))?vVazio():VIEWS[S.tab]();bindDrop();save();if(typeof ensureFolhetos==='function')setTimeout(()=>{ensureFolhetos();ensurePrecos()},0)}
 
 /* actions */
@@ -1309,7 +1309,7 @@ async function _afterLogin(){
     let {data:l}=await REAL.sb.from('lojas').select('id,nome').order('criado_em').limit(1);
     if(!l?.length){const {data:id}=await REAL.sb.rpc('criar_loja',{p_nome:S.store.name});l=[{id,nome:S.store.name}]}
     REAL.loja=l[0];await loadFaturas();
-    ensureFolhetos();ensurePrecos();   // folhetos e preços dos sites assim que há sessão
+    ensureFolhetos();ensurePrecos();fundosProdutos();   // folhetos, preços dos sites e fotos sem fundo assim que há sessão
   }
   if(S.tab==='invoices')render();
 }
@@ -1557,9 +1557,29 @@ async function sugerirProdutos(pe){
     pe.sug=data.linhas||[];
   }catch(e){pe.sug=pe.res.linhas.map(()=>({candidatos:[]}))}
   if(S.pending===pe)render();
+  // fotos sem fundo: as que ainda não existem são feitas agora (uma vez para todas as lojas)
+  const objs=(pe.sug||[]).flatMap(r=>[r.produto,...(r.candidatos||[])]).filter(Boolean);
+  await tirarFundos(objs,'imagem');
+  if(S.pending===pe)render();
+}
+const eSemFundo=u=>!u||/\/storage\/v1\/object\/public\/fotos-produtos\//.test(u);
+async function tirarFundos(objs,campo){
+  if(!REAL.sb)return;
+  const urls=[...new Set(objs.map(o=>o[campo]).filter(u=>u&&!eSemFundo(u)&&/^https?:/.test(u)))];
+  const lotes=[];for(let i=0;i<urls.length;i+=6)lotes.push(urls.slice(i,i+6));
+  const mapa={};
+  await Promise.all(lotes.map(async l=>{try{const {data}=await REAL.sb.functions.invoke('foto-sem-fundo',{body:{urls:l}});Object.assign(mapa,data?.fotos||{})}catch(e){}}));
+  let mudou=false;for(const o of objs){const n=mapa[o[campo]];if(n){o.original=o[campo];o[campo]=n;mudou=true}}
+  return mudou;
+}
+// produtos já confirmados com foto do site ainda com fundo: trocar pela versão sem fundo
+async function fundosProdutos(){
+  const ps=S.products.filter(p=>p.img&&!eSemFundo(p.img));if(!ps.length)return;
+  if(await tirarFundos(ps,'img')){for(const p of ps)if(eSemFundo(p.img))PHOTOS[p.id]=p.img;render()}
+  if(S.porConfirmar?.length)await tirarFundos(S.porConfirmar.flatMap(x=>x.candidatos||[]),'imagem');
 }
 function escolhido(pe,i){const sg=pe.sug?.[i];if(!sg)return null;if(sg.conhecido&&pe.esc?.[i]!==-1)return sg.produto;const k=pe.esc?.[i];return k>=0?sg.candidatos?.[k]||null:null}
-function fotoCand(c,w){return c?.imagem?`<img src="${esc(c.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:${w}px;height:${w}px;object-fit:contain;background:#fff;border-radius:10px;flex:none" onerror="this.style.visibility='hidden'">`:`<span style="width:${w}px;height:${w}px;border-radius:10px;background:var(--line,#E5E7EB);flex:none"></span>`}
+function fotoCand(c,w){return c?.imagem?`<img src="${esc(c.imagem)}" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:${w}px;height:${w}px;object-fit:contain;background:${eSemFundo(c.imagem)?'transparent':'#fff'};border-radius:10px;flex:none" onerror="this.style.visibility='hidden'">`:`<span style="width:${w}px;height:${w}px;border-radius:10px;background:var(--line,#E5E7EB);flex:none"></span>`}
 function nomeCand(c){const n=String(c.produto||''),m=String(c.marca||'');return norm(n).includes(norm(m))||!m?n:n+' '+m}
 function candBtns(cs,sel,act,attrs){
   return `<div style="display:flex;gap:8px;flex-wrap:wrap">${cs.map((c,k)=>`<button class="cand" data-act="${act}" ${attrs} data-k="${k}" aria-pressed="${sel===k}" style="display:flex;gap:8px;align-items:center;text-align:left;padding:6px 10px 6px 6px;border-radius:12px;border:2px solid ${sel===k?'var(--green,#16A34A)':'var(--line,#E5E7EB)'};background:${sel===k?'var(--green-soft,#ECFDF5)':'#fff'};max-width:230px;cursor:pointer">${fotoCand(c,52)}<span style="min-width:0"><b class="xs" style="display:block;line-height:1.25">${esc(nomeCand(c))}</b><span class="xs muted">${esc(c.tamanho?tamanhoBonito(c.tamanho):'')}</span></span></button>`).join('')}
