@@ -490,6 +490,16 @@ function setPromo(id,patch){S.promos[id]=Object.assign({},promo(id),patch)}
 function prod(id){return S.products.find(p=>p.id===id)}
 function initials(n){return n.split(/\s+/).filter(w=>w.length>2).slice(0,2).map(w=>w[0]).join('').toUpperCase()||'AM'}
 function code(p){return p.name.split(' ')[0].normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().slice(0,8)+'-'+initials(S.store.name)}
+const dCurta=d=>d.getDate()+'/'+(d.getMonth()+1);
+const isoD=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+// período da promoção: começa no dia em que sai a publicação (ou na aprovação) e dura 7 dias, salvo se o dono mudar as datas
+function periodo(p){const pr=promo(p.id);
+  const ini=pr.ini?new Date(pr.ini+'T00:00'):new Date(pr.sched?pr.sched.at:(pr.at||Date.now()));ini.setHours(0,0,0,0);
+  let fim=pr.fim?new Date(pr.fim+'T00:00'):new Date(ini.getFullYear(),ini.getMonth(),ini.getDate()+6);if(fim<ini)fim=ini;
+  return {ini,fim,txt:dCurta(ini)+' a '+dCurta(fim),ate:dCurta(fim)}}
+const AVISO_STOCK='Promoção limitada ao stock existente.';
+function legenda(p){const s=S.store,pe=periodo(p);
+  return `${p.name}${p.size?' · '+p.size:''} a ${eur(suggest(p).price)} 🔥\nDe ${pe.txt}, no ${s.name}${s.city?' ('+s.city+')':''}.\nMostre esta publicação na caixa.\n${AVISO_STOCK}`}
 function networks(){const s=S.store,n=[];if(s.fb)n.push('Facebook');if(s.ig)n.push('Instagram');if(s.gmb)n.push('Google');return n}
 function ink(hex){const h=hex.replace('#','');const [r,g,b]=[0,2,4].map(i=>parseInt(h.substr(i,2),16)/255).map(c=>c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4));return (.2126*r+.7152*g+.0722*b)>.45?'#0F172A':'#FFFFFF'}
 function timeAgo(t){const m=Math.round((Date.now()-new Date(t))/60000);if(m<1)return 'agora';if(m<60)return 'há '+m+' min';const h=Math.round(m/60);if(h<24)return 'há '+h+' h';return 'há '+Math.round(h/24)+' d'}
@@ -627,7 +637,7 @@ function nomeCurto(n,marca,max=24){
 const nomePost=p=>(S.nomesPost&&S.nomesPost[p.name])||nomeCurto(p.name,marcaDe(p));
 function postHTML(p,style){
   if(!PHOTOS[p.id])return postIllustrated(p,style);
-  const s=S.store,c1=s.c1,c2=s.c2,i1=ink(c1),i2=ink(c2),sg=suggest(p),cd=code(p),pc=i1==='#FFFFFF'?c1:'#0F172A';
+  const s=S.store,c1=s.c1,c2=s.c2,i1=ink(c1),i2=ink(c2),sg=suggest(p),pe=periodo(p),pc=i1==='#FFFFFF'?c1:'#0F172A';
   const ph=`<img src="${PHOTOS[p.id]}" alt="">`;
   const logo=s.logo?`<img class="p-logo" src="${s.logo}" alt="">`:`<span class="p-logo" style="background:${i1};color:${c1}">${esc(initials(s.name))}</span>`;
   const logo2=s.logo?`<img class="p-logo" src="${s.logo}" alt="">`:`<span class="p-logo" style="background:${c1};color:${i1}">${esc(initials(s.name))}</span>`;
@@ -638,25 +648,25 @@ function postHTML(p,style){
       <div class="p-name" style="font-size:7.6cqw;margin-top:3.5cqw">${esc(nomePost(p))}</div><div class="p-size" style="font-size:4.2cqw">${esc(p.size)}</div>${comp?`<div class="p-comp" style="opacity:.85;font-size:3.6cqw">${comp}</div>`:''}</div>
     <div class="p-ph" data-z="foto" style="right:6cqw;top:22cqw;width:38cqw;height:50cqw">${ph}</div>
     <div data-z="preco" style="position:absolute;left:5cqw;bottom:12cqw;background:${c2};color:${i2};border-radius:99px;padding:2.4cqw 5cqw;transform:rotate(-4deg);box-shadow:0 2cqw 4cqw rgba(0,0,0,.2)"><span class="p-price" style="font-size:11cqw">${eur(sg.price)}</span></div>
-    <div class="p-foot" data-z="rodape" style="text-align:right">Diga <b>${cd}</b> na caixa</div></div>`;
+    <div class="p-foot" data-z="rodape" style="text-align:right">De <b>${pe.txt}</b> · mostre na caixa</div></div>`;
   if(style===1)return `<div class="post" style="background:#FFFFFF;color:#0F172A;box-shadow:inset 0 0 0 1px rgba(15,23,42,.06)">
     <div style="position:absolute;inset:0 0 auto 0;height:21cqw;background:${c1}"></div>
     <div class="p-top" data-z="topo" style="color:${i1}">${logo}<span>${esc(s.name)}</span></div>
     <div class="p-ph" data-z="foto" style="left:6cqw;top:27cqw;width:40cqw;height:54cqw">${ph}</div>
     <div data-z="txt" style="position:absolute;left:51cqw;right:5cqw;top:28cqw"><div class="p-name" style="font-size:6.6cqw">${esc(nomePost(p))}</div><div class="p-size" style="font-size:3.8cqw">${esc(p.size)}</div>
       <div class="p-price" style="color:${pc};font-size:12.5cqw;margin-top:4cqw">${eur(sg.price)}</div>
-      <span class="p-chip" style="background:${c2};color:${i2};margin-top:2.5cqw;font-size:3.4cqw">ESTA SEMANA</span>${comp?`<div class="p-comp" style="color:#475569;font-size:3.4cqw">${comp}</div>`:''}</div>
-    <div class="p-foot" data-z="rodape" style="color:#475569;font-size:3.8cqw">Diga <b style="color:#0F172A">${cd}</b> na caixa · válido esta semana</div></div>`;
+      <span class="p-chip" style="background:${c2};color:${i2};margin-top:2.5cqw;font-size:3.4cqw">ATÉ ${pe.ate}</span>${comp?`<div class="p-comp" style="color:#475569;font-size:3.4cqw">${comp}</div>`:''}</div>
+    <div class="p-foot" data-z="rodape" style="color:#475569;font-size:3.8cqw">Válido de <b style="color:#0F172A">${pe.txt}</b> · mostre esta publicação na caixa</div></div>`;
   return `<div class="post" style="background:${c2} repeating-linear-gradient(135deg,rgba(255,255,255,.10) 0 4cqw,rgba(255,255,255,0) 4cqw 8cqw);color:${i2}">
-    <div data-z="topo" style="position:absolute;left:6cqw;top:6cqw;font-size:7cqw;font-weight:800">SÓ ESTA SEMANA</div>
+    <div data-z="topo" style="position:absolute;left:6cqw;top:6cqw;font-size:7cqw;font-weight:800">DE ${pe.txt.toUpperCase()}</div>
     <div data-z="cartao" data-caixa data-fixo style="position:absolute;left:6cqw;right:6cqw;top:19cqw;height:58cqw;background:#FFFFFF;color:#0F172A;border-radius:4cqw;transform:rotate(-2.5deg);box-shadow:0 2cqw 6cqw rgba(0,0,0,.18);display:flex;gap:3cqw;padding:4cqw;align-items:center">
       <div data-z="foto" style="width:40%;height:100%;display:grid;place-items:center">${ph.replace('<img','<img style="max-width:100%;max-height:100%;object-fit:contain"')}</div>
       <div data-z="txt" style="flex:1;min-width:0"><div class="p-name" style="font-size:6.4cqw">${esc(nomePost(p))}</div><div class="p-size" style="font-size:3.6cqw">${esc(p.size)}</div>
-        <div class="p-price" style="color:${pc};font-size:12cqw;margin-top:3cqw">${eur(sg.price)}</div>${comp?`<div class="p-comp" style="color:#475569;font-size:3.3cqw">${comp}</div>`:''}</div></div>
-    <div class="p-foot" data-z="rodape" style="display:flex;align-items:center;gap:3cqw">${logo2}<span><b style="font-family:var(--f-head);letter-spacing:0">${esc(s.name)}</b><br>${esc(s.city)}</span><span style="margin-left:auto;text-align:right">Diga na caixa<br><b>${cd}</b></span></div></div>`;
+        <div class="p-price" style="color:${pc};font-size:12cqw;margin-top:3cqw">${eur(sg.price)}</div><div class="p-size" style="font-size:3.4cqw;margin-top:1.5cqw">Mostre esta publicação na caixa</div>${comp?`<div class="p-comp" style="color:#475569;font-size:3.3cqw">${comp}</div>`:''}</div></div>
+    <div class="p-foot" data-z="rodape" style="display:flex;align-items:center;gap:3cqw">${logo2}<span><b style="font-family:var(--f-head);letter-spacing:0">${esc(s.name)}</b><br>${esc(s.city)}</span></div></div>`;
 }
 function postIllustrated(p,style){
-  const s=S.store,c1=s.c1,c2=s.c2,i1=ink(c1),i2=ink(c2),sg=suggest(p),cd=code(p);
+  const s=S.store,c1=s.c1,c2=s.c2,i1=ink(c1),i2=ink(c2),sg=suggest(p),pe=periodo(p);
   const logo=s.logo?`<img class="p-logo" src="${s.logo}" alt="">`:`<span class="p-logo" style="background:${i1};color:${c1}">${esc(initials(s.name))}</span>`;
   const logo2=s.logo?`<img class="p-logo" src="${s.logo}" alt="">`:`<span class="p-logo" style="background:${c1};color:${i1}">${esc(initials(s.name))}</span>`;
   const comp='';   // as publicações nunca mostram preços nem comparação com as grandes superfícies
@@ -666,20 +676,24 @@ function postIllustrated(p,style){
     <div data-z="txt" style="position:absolute;left:6cqw;top:27cqw;right:${nomePost(p).length>12?47:6}cqw"><span class="p-chip" style="background:${c2};color:${i2}">PROMOÇÃO</span>
       <div class="p-name" style="margin-top:4cqw;font-size:${nomePost(p).length>34?6:nomePost(p).length>22?7:nomePost(p).length>12?8.4:10}cqw">${esc(nomePost(p))}</div><div class="p-size">${esc(p.size)}</div>${comp?`<div class="p-comp" style="opacity:.85;max-width:48cqw">${comp}</div>`:''}</div>
     <div data-z="preco" style="position:absolute;right:5cqw;bottom:13cqw;width:38cqw;height:38cqw;border-radius:50%;background:${c2};color:${i2};display:grid;place-items:center;transform:rotate(-8deg)"><span class="p-price" style="font-size:11cqw">${eur(sg.price)}</span></div>
-    <div class="p-foot" data-z="rodape">Só esta semana</div></div>`;
+    <div class="p-foot" data-z="rodape">De ${pe.txt} · mostre na caixa</div></div>`;
   if(style===1)return `<div class="post" style="background:#FFFFFF;color:#0F172A;box-shadow:inset 0 0 0 1px rgba(15,23,42,.06)">
     <div style="position:absolute;inset:0 0 auto 0;height:23cqw;background:${c1}"></div>
     <div class="p-top" data-z="topo" style="color:${i1}">${logo}<span>${esc(s.name)}</span></div>
     <div data-z="txt" style="position:absolute;left:6cqw;right:6cqw;top:31cqw"><div class="p-name" style="font-size:11cqw">${esc(nomePost(p))}</div><div class="p-size">${esc(p.size)}</div>
-      <div style="display:flex;align-items:center;gap:4cqw;margin-top:6cqw"><span class="p-price" style="color:${pc}">${eur(sg.price)}</span><span class="p-chip" style="background:${c2};color:${i2}">ESTA SEMANA</span></div>${comp?`<div class="p-comp" style="color:#475569">${comp}</div>`:''}</div>
-    <div class="p-foot" data-z="rodape" style="color:#475569">Promoção válida esta semana na loja</div></div>`;
+      <div style="display:flex;align-items:center;gap:4cqw;margin-top:6cqw"><span class="p-price" style="color:${pc}">${eur(sg.price)}</span><span class="p-chip" style="background:${c2};color:${i2}">ATÉ ${pe.ate}</span></div>${comp?`<div class="p-comp" style="color:#475569">${comp}</div>`:''}</div>
+    <div class="p-foot" data-z="rodape" style="color:#475569">Válido de ${pe.txt} · mostre esta publicação na caixa</div></div>`;
   return `<div class="post" style="background:${c2} repeating-linear-gradient(135deg,rgba(255,255,255,.10) 0 4cqw,rgba(255,255,255,0) 4cqw 8cqw);color:${i2}">
-    <div data-z="topo" style="position:absolute;left:6cqw;top:6cqw;font-size:7cqw;font-weight:800">SÓ ESTA SEMANA</div>
+    <div data-z="topo" style="position:absolute;left:6cqw;top:6cqw;font-size:7cqw;font-weight:800">DE ${pe.txt.toUpperCase()}</div>
     <div data-z="cartao" data-caixa style="position:absolute;left:8cqw;right:8cqw;top:22cqw;background:#FFFFFF;color:#0F172A;border-radius:4cqw;padding:6cqw;transform:rotate(-3deg);box-shadow:0 2cqw 6cqw rgba(0,0,0,.18)">
       <div class="p-name" style="font-size:8.5cqw">${esc(nomePost(p))} <span style="font-weight:600;opacity:.55;font-size:5.5cqw">${esc(p.size)}</span></div>
-      <div class="p-price" style="color:${pc};margin-top:3cqw">${eur(sg.price)}</div>${comp?`<div class="p-comp" style="color:#475569">${comp}</div>`:''}</div>
+      <div class="p-price" style="color:${pc};margin-top:3cqw">${eur(sg.price)}</div><div class="p-size" style="font-size:4cqw;margin-top:1.5cqw;opacity:.7">Mostre esta publicação na caixa</div>${comp?`<div class="p-comp" style="color:#475569">${comp}</div>`:''}</div>
     <div class="p-foot" data-z="rodape" style="display:flex;align-items:center;gap:3cqw">${logo2}<span><b style="font-family:var(--f-head);letter-spacing:0">${esc(s.name)}</b><br>${esc(s.city)}</span></div></div>`;
 }
+// datas da promoção (editáveis) e a legenda que acompanha a publicação, sempre com o aviso de stock
+function datasLegendaHTML(p){const pe=periodo(p),inp='padding:6px 8px;border:1px solid var(--line,#E2E8F0);border-radius:8px;font:inherit';
+  return `<div class="small" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-4px 0 10px"><span class="muted">Válido de</span><input type="date" data-per="ini" data-id="${p.id}" value="${isoD(pe.ini)}" style="${inp}"><span class="muted">a</span><input type="date" data-per="fim" data-id="${p.id}" value="${isoD(pe.fim)}" min="${isoD(pe.ini)}" style="${inp}"></div>
+  <details style="margin:-2px 0 12px"><summary class="small" style="cursor:pointer;color:var(--blue-2)">Ver legenda da publicação</summary><div style="display:flex;gap:10px;align-items:flex-start;margin-top:8px;flex-wrap:wrap"><pre class="small" style="white-space:pre-wrap;font:inherit;margin:0;flex:1;min-width:220px;background:var(--bg-soft,#F8FAFC);border-radius:10px;padding:10px 12px">${esc(legenda(p))}</pre><button class="btn sm" data-act="copiar-legenda" data-id="${p.id}">Copiar</button></div></details>`}
 const STYLE_NAMES=['Destaque','Montra','Folheto'];
 /* ===== enquadramento automático das publicações =====
    Cada publicação tem zonas (data-z): topo, texto, foto, preço, rodapé. Depois de desenhada, verifica-se:
@@ -878,11 +892,12 @@ function vPosts(){
   return `<div class="ph"><div><h1>Publicações</h1><p>Três designs por promoção aprovada, o carrossel com as promoções da semana e um reels do produto com a melhor promoção. Tudo agendado para o melhor horário.</p></div></div>
   ${todo.map(x=>`<section class="card pad"><div class="card-h"><div><span class="label">Escolher design</span><h2>${esc(x.p.name)} a ${eur(x.s.price)}</h2></div><span class="xs muted">${networks().join(', ')}</span></div>
     <label class="small" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-4px 0 12px"><span class="muted">Nome nas publicações</span><input type="text" data-nome-post="${esc(x.p.name)}" value="${esc(nomePost(x.p))}" maxlength="40" style="flex:1;min-width:180px;max-width:320px;padding:6px 10px;border:1px solid var(--line,#E2E8F0);border-radius:8px;font:inherit"></label>
+    ${datasLegendaHTML(x.p)}
     <div class="posts3">${[0,1,2].map(i=>`<div class="pp">${postHTML(x.p,i)}<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="small"><b>${STYLE_NAMES[i]}</b></span><button class="btn sm primary" data-act="choose" data-id="${x.p.id}" data-idx="${i}">Escolher</button></div></div>`).join('')}</div></section>`).join('')}
   ${vCarousel(st)}${vReel(st)}
   <section class="card pad"><div class="card-h"><h2>Próximos 7 dias</h2><span class="xs muted">Horários sugeridos (simulação; na fase 2 vêm do Metricool)</span></div>
     <div class="cal">${days.map(d=>{const k=dayKey(d),items=done.filter(x=>x.pr.sched&&x.pr.sched.day===k);return `<div class="day"><span class="d">${dfmt.format(d)}</span>${items.map(x=>`<div class="slot"><b>${x.pr.sched.time} · ${esc(x.p.name)}</b>${eur(x.s.price)} · ${STYLE_NAMES[x.pr.choice]}</div>`).join('')}${extraSlots(k)}</div>`}).join('')}</div></section>
-  ${done.length?`<section class="card pad"><div class="card-h"><h2>Agendadas</h2></div><div class="list">${done.map(x=>`<div class="item"><div style="width:64px;flex:none">${postHTML(x.p,x.pr.choice)}</div><div class="grow"><b>${esc(x.p.name)} a ${eur(x.s.price)}</b><div class="xs muted">${STYLE_NAMES[x.pr.choice]}</div></div><span class="chip c-blue num">${whenTxt(x.pr.sched)}</span><button class="btn sm" data-act="rechoose" data-id="${x.p.id}">${IC.swap.replace('<svg','<svg width="15" height="15"')}Mudar</button></div>`).join('')}</div></section>`:''}`;
+  ${done.length?`<section class="card pad"><div class="card-h"><h2>Agendadas</h2></div><div class="list">${done.map(x=>`<div class="item"><div style="width:64px;flex:none">${postHTML(x.p,x.pr.choice)}</div><div class="grow"><b>${esc(x.p.name)} a ${eur(x.s.price)}</b><div class="xs muted">${STYLE_NAMES[x.pr.choice]} · válido de ${periodo(x.p).txt}</div></div><span class="chip c-blue num">${whenTxt(x.pr.sched)}</span><button class="btn sm" data-act="copiar-legenda" data-id="${x.p.id}">Legenda</button><button class="btn sm" data-act="rechoose" data-id="${x.p.id}">${IC.swap.replace('<svg','<svg width="15" height="15"')}Mudar</button></div>`).join('')}</div></section>`:''}`;
 }
 
 /* ===== Resultados: prova de que as promoções trazem clientes ===== */
@@ -901,11 +916,11 @@ function vResultados(){
   const mesN=new Intl.DateTimeFormat('pt-PT',{month:'long',year:'numeric'}).format(new Date());
   const veredito=t.lucro>=r.plano&&r.plano?`<b style="color:var(--green-ink)">O admarket já se pagou ${pago.toLocaleString('pt-PT',{maximumFractionDigits:1})} vezes este mês.</b>`
     :`Faltam cerca de <b>${falta}</b> clientes com cupão para pagar o plano ${esc(S.store.plan)} (${eur(r.plano)}/mês).`;
-  return `<div class="ph"><div><h1>Resultados</h1><p>Cada publicação traz um código. Quando um cliente o diz na caixa, carregue em <b>+1</b>. No fim do mês vê quanto as promoções venderam e se o admarket se pagou.</p></div><button class="btn" data-act="relatorio">Relatório de ${esc(mesN)}</button></div>
-  <section class="card pad"><div class="card-h"><h2>Registo na caixa</h2><span class="xs muted">Um toque por cliente que disser o código</span></div>
-    ${r.linhas.length?`<div class="list">${r.linhas.map(l=>`<div class="item"><div class="prod" style="flex:1;min-width:0">${mini(l.p)}<div><b>${esc(l.p.name)}</b><span class="sub" style="display:block">Código <b>${esc(code(l.p))}</b> · ${eur(l.s.price)} · hoje ${l.hoje} · mês ${l.n}</span></div></div>
+  return `<div class="ph"><div><h1>Resultados</h1><p>Cada publicação diz «mostre esta publicação na caixa». Quando um cliente mostrar o telemóvel com a publicação (ou um print), carregue em <b>+1</b>. No fim do mês vê quanto as promoções venderam e se o admarket se pagou.</p></div><button class="btn" data-act="relatorio">Relatório de ${esc(mesN)}</button></div>
+  <section class="card pad"><div class="card-h"><h2>Registo na caixa</h2><span class="xs muted">Um toque por cliente que mostrar a publicação</span></div>
+    ${r.linhas.length?`<div class="list">${r.linhas.map(l=>`<div class="item"><div class="prod" style="flex:1;min-width:0">${mini(l.p)}<div><b>${esc(l.p.name)}</b><span class="sub" style="display:block">Válido de ${periodo(l.p).txt} · ${eur(l.s.price)} · hoje ${l.hoje} · mês ${l.n}</span></div></div>
       <button class="btn sm" data-act="uso-menos" data-id="${l.p.id}" aria-label="Retirar um registo de ${esc(l.p.name)}" ${l.hoje?'':'disabled'}>−1</button><button class="btn green" data-act="uso-mais" data-id="${l.p.id}" aria-label="Registar um cliente para ${esc(l.p.name)}">+1</button></div>`).join('')}</div>`
-    :'<p class="small muted">Ainda não há promoções aprovadas. Aprove uma em Promoções e o código aparece aqui e nas publicações.</p>'}
+    :'<p class="small muted">Ainda não há promoções aprovadas. Aprove uma em Promoções e ela aparece aqui.</p>'}
   </section>
   <section class="metrics" aria-label="Resultados do mês">
     <div class="card metric"><span class="m-ic" style="background:var(--blue-soft);color:var(--blue-2)">${IC.tag}</span><div class="m-body"><span class="small muted">Clientes com cupão (mês)</span><span class="m-val num">${t.n}</span></div></div>
@@ -921,7 +936,7 @@ function vRelatorio(){
   ${r.linhas.map(l=>`<tr><td>${esc(l.p.name)}</td><td class="num">${eur(l.s.price)}</td><td class="num">${l.n}</td><td class="num">${eur(l.vendas)}</td><td class="num">${eur(l.lucro)}</td></tr>`).join('')}
   <tr><td><b>Total</b></td><td></td><td class="num"><b>${r.tot.n}</b></td><td class="num"><b>${eur(r.tot.vendas)}</b></td><td class="num"><b>${eur(r.tot.lucro)}</b></td></tr></tbody></table>
   <p>Plano ${esc(S.store.plan)}: ${eur(r.plano)}/mês · ${r.tot.lucro>=r.plano?`o lucro das promoções pagou o plano ${(r.tot.lucro/r.plano).toLocaleString('pt-PT',{maximumFractionDigits:1})} vezes.`:`o lucro das promoções cobriu ${Math.round(r.plano?r.tot.lucro/r.plano*100:0)} % do plano.`}</p>
-  <p class="xs muted">Contagem feita na caixa pelos códigos das publicações. Estimativa: cada cliente com cupão gasta o cesto médio (${eur(r.cesto)}) com a margem média da loja (${Math.round(r.mg*100)} %).</p>
+  <p class="xs muted">Contagem feita na caixa pelos clientes que mostram a publicação. Estimativa: cada um gasta o cesto médio (${eur(r.cesto)}) com a margem média da loja (${Math.round(r.mg*100)} %).</p>
   <div class="acts"><button class="btn" data-act="relatorio-fechar">Fechar</button><button class="btn primary" data-act="relatorio-imprimir">Imprimir ou guardar PDF</button></div></div>`;
 }
 function vConfig(){
@@ -1204,7 +1219,7 @@ function coverSlide(items,N){
     <span style="position:absolute;right:5cqw;top:6cqw;font:600 3.6cqw var(--f-ui);opacity:.8">1/${N}</span></div>`;
 }
 function productSlide(x,n,N){
-  const s=S.store,c1=s.c1,c2=s.c2,i1=ink(c1),i2=ink(c2),p=x.p,sg=x.s,pc=i1==='#FFFFFF'?c1:'#0F172A';
+  const s=S.store,c1=s.c1,c2=s.c2,i1=ink(c1),i2=ink(c2),p=x.p,sg=x.s,pc=i1==='#FFFFFF'?c1:'#0F172A',pe=periodo(p);
   const off=0;   // sem comparações com a concorrência nas publicações
   return `<div class="post" style="background:#FFFFFF;color:#0F172A;box-shadow:inset 0 0 0 1px rgba(15,23,42,.06)">
     <div style="position:absolute;inset:0 0 auto 0;height:17cqw;background:${c1}"></div>
@@ -1214,7 +1229,7 @@ function productSlide(x,n,N){
     ${off?`<span class="p-chip" style="position:absolute;right:6cqw;top:22cqw;background:${c2};color:${i2}">-${off}%</span>`:''}
     <div data-z="txt" style="position:absolute;left:6cqw;right:6cqw;bottom:13cqw"><div class="p-name" style="font-size:6.4cqw">${esc(nomePost(p))}</div><div class="p-size" style="font-size:3.6cqw">${esc(p.size)}</div>
       <div style="display:flex;align-items:baseline;gap:3cqw;margin-top:2cqw"><span class="p-price" style="color:${pc};font-size:11cqw">${eur(sg.price)}</span></div></div>
-    <div class="p-foot" data-z="rodape" style="color:#475569;font-size:3.5cqw">Só esta semana</div></div>`;
+    <div class="p-foot" data-z="rodape" style="color:#475569;font-size:3.5cqw">De ${pe.txt} · limitado ao stock existente</div></div>`;
 }
 function endSlide(N){
   const s=S.store,c2=s.c2,i2=ink(c2);
@@ -1242,7 +1257,7 @@ function vReel(st){
   const head=`<div class="card-h"><div><span class="label">Reels sugerido · Instagram, Facebook e TikTok</span><h2>Um produto em destaque</h2></div>
     <div class="seg" role="group" aria-label="Critério"><button data-act="reel-crit" data-id="deal" aria-pressed="${crit==='deal'}">Melhor promoção</button><button data-act="reel-crit" data-id="margin" aria-pressed="${crit==='margin'}">Maior margem</button></div></div>`;
   if(!x)return `<section class="card pad">${head}<div class="empty">Aprove uma promoção para a IA escolher o produto do reels.</div></section>`;
-  const s=S.store,c1=s.c1,c2=s.c2,i1=ink(c1),i2=ink(c2),p=x.p,sg=x.s,pc=i1==='#FFFFFF'?c1:'#0F172A',off=Math.round(Math.max(0,dealOf(x))*100),cd=code(p);
+  const s=S.store,c1=s.c1,c2=s.c2,i1=ink(c1),i2=ink(c2),p=x.p,sg=x.s,pc=i1==='#FFFFFF'?c1:'#0F172A',off=Math.round(Math.max(0,dealOf(x))*100),pe=periodo(p);
   const why=crit==='deal'?(sg.beats?`É a promoção mais forte face à concorrência: ${off}% abaixo do ${lowComp(p).name} (${eur(sg.low)}).`:'Nenhuma promoção bate a concorrência; escolhido o produto mais próximo.'):`É a promoção com mais margem: ${pct(sg.margin)} ganhos por unidade (${eur(r2(sg.price-p.cost))}).`;
   const r=S.reel,fresh=r&&r.pid===p.id&&r.crit===crit;
   const hook='A promoção da semana';   // sem comparações com a concorrência nas publicações
@@ -1254,7 +1269,7 @@ function vReel(st){
           <div data-z="txt" style="position:absolute;left:8cqw;right:8cqw;bottom:22cqw"><div style="font:700 7cqw/1.1 var(--f-head)">${esc(nomePost(p))}</div><div style="font:500 4.5cqw var(--f-ui);color:#64748B;margin-top:2cqw">${esc(p.size)}</div>
           <div style="height:5cqw"></div><div class="rp" style="font:800 20cqw/1 var(--f-head);letter-spacing:-.04em;color:${pc}">${eur(sg.price)}</div></div>
           <span class="p-chip" style="position:absolute;right:8cqw;top:8cqw;background:${c2};color:${i2};font-size:6cqw">PROMOÇÃO</span></div>
-        <div class="scene" style="background:${c2};color:${i2}"><div data-z="txt" style="position:absolute;left:8cqw;right:8cqw;top:18cqw;font:800 11cqw/1.05 var(--f-head)">Só esta semana</div>
+        <div class="scene" style="background:${c2};color:${i2}"><div data-z="txt" style="position:absolute;left:8cqw;right:8cqw;top:18cqw;font:800 11cqw/1.05 var(--f-head)">De ${pe.txt}</div>
           <div data-z="txt2" style="position:absolute;left:8cqw;right:8cqw;top:52cqw;font:500 6cqw/1.35 var(--f-ui)">${esc(s.city)}</div>
           <div data-z="rodape" style="position:absolute;left:8cqw;right:8cqw;bottom:14cqw;display:flex;align-items:center;gap:4cqw;font:700 6cqw var(--f-head)">${storeLogo(false).replace('class="p-logo"','class="p-logo" style="width:16cqw;height:16cqw;font-size:6cqw"')}<span>${esc(s.name)}</span></div></div>
         <div class="rbar"><i></i></div>
@@ -1264,9 +1279,9 @@ function vReel(st){
         <ol class="story">
           <li><b>0–3 s · Gancho</b><span>Texto "${esc(hook)}" com o produto a entrar em zoom.</span><em>Locução: "${esc(hook)}!"</em></li>
           <li><b>3–6 s · Preço</b><span>Aparece o preço da loja em grande.</span><em>Locução: "${esc(nomePost(p))}, só ${eur(sg.price).replace(/\s*€/,' euros')}."</em></li>
-          <li><b>6–9 s · Chamada</b><span>Nome, localidade e logótipo da loja.</span><em>Locução: "Só esta semana, no ${esc(s.name)}."</em></li>
+          <li><b>6–9 s · Chamada</b><span>Nome, localidade e logótipo da loja.</span><em>Locução: "De ${pe.ini.getDate()} a ${pe.fim.getDate()} de ${pe.fim.toLocaleDateString('pt-PT',{month:'long'})}, no ${esc(s.name)}. Limitado ao stock existente."</em></li>
         </ol>
-        <p class="xs muted">Legenda sugerida: "${esc(p.name)} a ${eur(sg.price)} 🔥 Só esta semana no ${esc(s.name)}." · Música: faixa com licença comercial, nunca um som em tendência sem licença.</p>
+        <p class="xs muted">Legenda sugerida: "${esc(legenda(p)).replace(/\n/g,' ')}" · Música: faixa com licença comercial, nunca um som em tendência sem licença.</p>
         <div class="acts" style="justify-content:flex-start">${fresh?`<span class="chip c-blue num">Agendado · ${whenTxt(r.sched)}</span><button class="btn sm" data-act="redo-reel">Desagendar</button>`:`<button class="btn sm green" data-act="approve-reel" data-id="${p.id}">${IC.check.replace('<svg','<svg width="14" height="14"')}Aprovar e agendar reels</button>`}</div>
       </div>
     </div></section>`;
@@ -1302,6 +1317,7 @@ const ACT={
   approve(id){const p=prod(id),s=suggest(p);setPromo(id,{status:'approved',at:new Date().toISOString(),choice:null,sched:null});log(`Aprovou ${p.name} a ${eur(s.price)} (margem ${pct(s.margin)})`);render();toast('Aprovada. Escolha o design em Publicações.')},
   reject(id){const p=prod(id);setPromo(id,{status:'rejected',at:new Date().toISOString()});log(`Rejeitou a sugestão para ${p.name}`);render();toast('Sugestão rejeitada')},
   undo(id){const p=prod(id);delete S.promos[id];log(`Anulou a decisão sobre ${p.name}`);render();toast('Decisão anulada')},
+  'copiar-legenda'(id){const t=legenda(prod(id));(navigator.clipboard?.writeText(t)||Promise.reject()).then(()=>toast('Legenda copiada'),()=>toast('Não foi possível copiar'))},
   choose(id,el){const i=+el.dataset.idx,p=prod(id),pr=promo(id),sched=pr.sched||nextSlot();setPromo(id,{choice:i,sched});log(`Escolheu "${STYLE_NAMES[i]}" para ${p.name} (${whenTxt(sched)})`);render();toast('Agendado: '+whenTxt(sched))},
   rechoose(id){setPromo(id,{choice:null});render()},
   plus(id){const pr=promo(id);setPromo(id,{clients:(pr.clients||0)+1});render();toast('+1 cliente registado')},
@@ -1372,6 +1388,7 @@ document.addEventListener('change',e=>{
   const t=e.target;
   if(t.id==='inv-photo'||t.id==='inv-pdf'){readInvoiceFile(t.files[0]);t.value='';return}
   if(t.id==='cfg-logo'&&t.files[0]){shrink(t.files[0],160).then(url=>{S.store.logo=url;const cols=extractColors(shrink.last);if(cols){S.store.c1=cols[0];if(cols[1])S.store.c2=cols[1]}render();toast('Logótipo carregado e cores atualizadas')}).catch(()=>toast('Não foi possível ler esta imagem. Experimente um PNG ou JPG.'));return}
+  if(t.dataset.per&&t.dataset.id){const v=t.value;if(v){const pe=periodo(prod(t.dataset.id)),pt={};if(t.dataset.per==='ini'){pt.ini=v;pt.fim=isoD(pe.fim)<v?v:isoD(pe.fim)}else{pt.ini=isoD(pe.ini);pt.fim=v<pt.ini?pt.ini:v}setPromo(t.dataset.id,pt);save();render()}return}
   if(t.dataset.nomePost!=null){S.nomesPost=S.nomesPost||{};const v=t.value.replace(/\s+/g,' ').trim();const pq=S.products.find(q=>q.name===t.dataset.nomePost)||{name:t.dataset.nomePost};if(v&&v!==nomeCurto(pq.name,marcaDe(pq)))S.nomesPost[t.dataset.nomePost]=v;else delete S.nomesPost[t.dataset.nomePost];save();render();return}
   if(t.dataset.cfg){S.store[t.dataset.cfg]=t.value;render();return}
   if(t.dataset.margin){const v=Math.max(0,Math.min(80,parseInt(t.value)||0));S.margins[t.dataset.margin]=v;render();toast(`Margem de ${t.dataset.margin.toLowerCase()}: ${v}%`)}
