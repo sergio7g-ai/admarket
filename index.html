@@ -755,11 +755,11 @@ function vCompare(){
   return `<div class="ph"><div><h1>Preços</h1><p>O seu custo ao lado das grandes superfícies, com o mínimo que respeita a margem e a promoção sugerida.</p></div></div>
   <section class="card"><div class="tw"><table><thead><tr><th>Produto</th><th>Custo</th><th>Continente</th><th>Pingo Doce</th><th>Auchan</th><th>Mínimo</th><th>Sugestão</th></tr></thead><tbody>
   ${S.products.map(p=>{const s=suggest(p),lo=lowComp(p);return `<tr><td><div class="prod">${mini(p)}<div><b>${esc(p.name)}</b><span class="sub">${esc(p.size)} · ${p.cat}${p.real?' · preços reais':''}</span></div></div></td>
-    <td class="num">${eur(p.cost)}</td>${(ci=>Object.keys(COMP).map(k=>`<td class="num ${k===lo.key?'low':''}">${eurN(ci.c[k])}${ci.src[k]?`<span class="sub">${ci.src[k]==='site'?'site · hoje':'folheto'}</span>`:''}</td>`).join(''))(compInfo(p))}
+    <td class="num">${eur(p.cost)}</td>${(ci=>Object.keys(COMP).map(k=>`<td class="num ${k===lo.key?'low':''}">${eurN(ci.c[k])}${ci.src[k]?`<span class="sub">${ci.src[k]==='site'?'site':'folheto'}</span>`:''}</td>`).join(''))(compInfo(p))}
     <td class="num">${eur(s.min)}<span class="sub">${S.margins[p.cat]}% margem</span></td>
     <td class="num"><b>${eur(s.price)}</b><span class="sub" style="color:${s.beats?'var(--green-ink)':'var(--orange-ink)'}">${s.beats?pct(s.margin)+' margem':'acima da concorrência'}</span></td></tr>`}).join('')}
   </tbody></table></div></section>
-  <p class="xs muted">A verde, o mais barato das três cadeias. «site · hoje»: preço visto nos sites nas últimas 48 h (pesquisa todas as madrugadas). «folheto»: promoção do folheto em vigor, quando é mais barata. Sem marca, é o último preço conhecido.</p>`;
+  <p class="xs muted">A verde, o mais barato das três cadeias. «site»: preço visto nos sites nos últimos 3 dias (cada produto é pesquisado de 2 em 2 dias). «folheto»: promoção do folheto em vigor, quando é mais barata. Sem marca, é o último preço conhecido.</p>`;
 }
 
 function prow(x){
@@ -1518,11 +1518,11 @@ async function ensurePrecos(){
     VIVO.at=new Date();render();
   }catch(e){}finally{VIVO.busy=false}
 }
-// preço da concorrência a usar, por cadeia: o visto no site há menos de 48 h (senão o último conhecido) e, se for mais baixo,
+// preço da concorrência a usar, por cadeia: o visto no site há menos de 72 h (pesquisa de 2 em 2 dias) (senão o último conhecido) e, se for mais baixo,
 // a promoção do folheto em vigor (só com tamanho confirmado e sem cartão). src diz de onde veio cada preço.
 function compInfo(p){
   const c=Object.assign({},p.comp||{}),src={},v=VIVO.map[chaveP(p)]||{};
-  for(const k in v){const r=v[k];if(!COMP[k]||Date.now()-new Date(r.visto_em)>48*3600e3)continue;const pr=+(r.preco_promo||r.preco);if(pr>0){c[k]=pr;src[k]='site'}}
+  for(const k in v){const r=v[k];if(!COMP[k]||Date.now()-new Date(r.visto_em)>72*3600e3)continue;const pr=+(r.preco_promo||r.preco);if(pr>0){c[k]=pr;src[k]='site'}}
   for(const f of folhetosDe(p))if(f.ativo&&f.certo&&!f.cartao&&COMP[f.cadeia]&&(c[f.cadeia]==null||f.preco<c[f.cadeia])){c[f.cadeia]=f.preco;src[f.cadeia]='folheto'}
   return {c,src};
 }

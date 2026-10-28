@@ -11,6 +11,8 @@ const CORS = {
 const ACTOR = 'trovevault~portugal-supermarket-prices';
 const CADEIA: Record<string, string> = { 'continente': 'continente', 'auchan': 'auchan', 'pingo doce': 'pingo' };
 const POR_RONDA = 48, PARALELO = 6, POR_CADEIA = 4;
+// fase inicial: cada produto é pesquisado de 2 em 2 dias e há um teto diário para caber nos 5 $ grátis do Apify (~0,01 $ por produto)
+const HORAS_ENTRE_PESQUISAS = 44, LIMITE_DIA = Number(Deno.env.get('LIMITE_PESQUISAS_DIA') || 16);
 
 const norm = (t: unknown) => String(t ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 function medida(t: string) {
@@ -73,17 +75,24 @@ Deno.serve(async (req) => {
   const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   let body: any = {}; try { body = await req.json(); } catch (_) { /* sem corpo */ }
 
+  // quantos produtos já foram pesquisados hoje (inclui os pedidos da app)
+  const hoje = new Date(); hoje.setUTCHours(0, 0, 0, 0);
+  const { data: feitos } = await sb.from('registo_pesquisas').select('pesquisados').gte('quando', hoje.toISOString());
+  const restante = LIMITE_DIA - (feitos || []).reduce((a: number, r: any) => a + (r.pesquisados || 0), 0);
+  if (restante <= 0) return json({ ok: true, pesquisados: 0, nota: `limite diário de ${LIMITE_DIA} produtos atingido` });
+
   let qs: any[] = [];
   if (Array.isArray(body.chaves) && body.chaves.length) {
     // pedido da app: só produtos nunca pesquisados (evita gastar com cliques repetidos)
     const { data } = await sb.from('pesquisas_preco').select('*').in('chave', body.chaves.slice(0, 15)).is('pesquisado_em', null);
     qs = data || [];
   } else {
-    const corte = new Date(Date.now() - 20 * 3600e3).toISOString(), ativo = new Date(Date.now() - 14 * 864e5).toISOString();
+    const corte = new Date(Date.now() - HORAS_ENTRE_PESQUISAS * 3600e3).toISOString(), ativo = new Date(Date.now() - 14 * 864e5).toISOString();
     const { data } = await sb.from('pesquisas_preco').select('*').gt('ultimo_uso', ativo)
       .or(`pesquisado_em.is.null,pesquisado_em.lt.${corte}`).order('pesquisado_em', { ascending: true, nullsFirst: true }).limit(POR_RONDA);
     qs = data || [];
   }
+  qs = qs.slice(0, restante);
   if (!qs.length) return json({ ok: true, pesquisados: 0, nota: 'nada para pesquisar agora' });
 
   let encontrados = 0, falhas = 0, resultados = 0; const erros: string[] = [];
