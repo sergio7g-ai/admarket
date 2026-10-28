@@ -31,9 +31,10 @@
 .fp-foot{position:absolute;left:3.5cqw;right:3.5cqw;bottom:2.4cqw;font:500 2.3cqw/1.3 var(--fbu);color:#64748B;display:flex;justify-content:space-between;gap:3cqw}
 .fp-tile{position:absolute;display:flex;flex-direction:column;padding:2cqw 2.2cqw 2cqw;border-right:.25cqw solid #E5E7EB;border-bottom:.25cqw solid #E5E7EB;background:#fff}
 .fp-ph{position:relative;flex:1 1 auto;min-height:0;display:grid;place-items:center;overflow:hidden}
-.fp-ph>img{max-width:100%;max-height:100%;object-fit:contain}
-.fp-ph>svg{width:100%;height:100%}
-.fp-ph .fp-letra{height:70%;max-width:70%;aspect-ratio:1;border-radius:3cqw;display:grid;place-items:center;font:800 9cqw var(--fbh)}
+.fp-ph>img{position:absolute;inset:0;margin:auto;max-width:var(--fs,100%);max-height:var(--fs,100%);object-fit:contain}
+.fp-ph>svg{position:absolute;inset:0;margin:auto;width:var(--fs,100%);height:var(--fs,100%)}
+.fp-ph>.fp-tag{position:absolute;right:.6cqw;bottom:1.6cqw}
+.fp-ph .fp-letra{height:calc(var(--fs,100%)*.7);max-width:calc(var(--fs,100%)*.7);aspect-ratio:1;border-radius:3cqw;display:grid;place-items:center;font:800 9cqw var(--fbh)}
 .fp-txt{flex:none;padding-top:1.2cqw}
 .fp-nome{font:800 3.1cqw/1.12 var(--fbh);letter-spacing:-.01em;overflow-wrap:break-word}
 .fp-tam{font:500 2.3cqw/1.2 var(--fbu);color:#64748B;margin-top:.5cqw}
@@ -63,7 +64,7 @@
   }
   // produto numa grelha: foto grande com a etiqueta do preço por cima, nome e tamanho por baixo (nada é cortado: o texto encolhe se for preciso)
   function produto(it, x, y, w, h, c, o = {}) {
-    // três zonas que nunca se tocam: foto, descrição e preço (a etiqueta fica por baixo, nunca por cima da foto)
+    // a etiqueta fica no canto da foto, em estilo de folheto, mas nunca por cima do produto nem da descrição
     const fita = o.fita ? `<span class="fp-fita" style="background:${c.c2};color:${c.i2}">${o.fita}</span>` : '';
     if (o.lado) return `<div class="fp-tile" data-lado style="left:${x}cqw;top:${y}cqw;width:${w}cqw;height:${h}cqw;flex-direction:row;gap:3cqw;align-items:stretch;padding:4cqw 3cqw 3cqw">
       <div class="fp-ph" style="flex:0 0 50%">${foto(it, c.c1)}</div>
@@ -72,9 +73,8 @@
         <div class="fp-pr" style="justify-content:flex-start;padding-top:4cqw">${etiqueta(it.preco, o.tag, c)}</div>
       </div>${fita}</div>`;
     return `<div class="fp-tile" style="left:${x}cqw;top:${y}cqw;width:${w}cqw;height:${h}cqw${o.fita ? ';padding-top:6.5cqw' : ''}">
-      <div class="fp-ph">${foto(it, c.c1)}</div>
-      <div class="fp-txt"><div class="fp-nome" style="${o.nome ? `font-size:${o.nome}cqw` : ''}">${esc(it.nome)}</div>${it.tamanho ? `<div class="fp-tam">${esc(it.tamanho)}</div>` : ''}</div>
-      <div class="fp-pr">${etiqueta(it.preco, o.tag || 6.5, c)}</div>${fita}</div>`;
+      <div class="fp-ph">${foto(it, c.c1)}${etiqueta(it.preco, o.tag || 6.5, c)}</div>
+      <div class="fp-txt"><div class="fp-nome" style="${o.nome ? `font-size:${o.nome}cqw` : ''}">${esc(it.nome)}</div>${it.tamanho ? `<div class="fp-tam">${esc(it.tamanho)}</div>` : ''}</div>${fita}</div>`;
   }
 
   function paginas(d) {
@@ -143,16 +143,31 @@
     for (const t of root.querySelectorAll('.fp-tile')) {
       const nome = t.querySelector('.fp-nome'), tam = t.querySelector('.fp-tam'), ph = t.querySelector('.fp-ph'), tag = t.querySelector('.fp-tag'), txt = t.querySelector('.fp-txt');
       if (!nome || !ph) continue;
-      const mal = () => { const T = t.getBoundingClientRect(), P = ph.getBoundingClientRect(), G = tag?.getBoundingClientRect(), X = txt.getBoundingClientRect();
+      const lado = t.hasAttribute('data-lado');
+      // foto que não carregou: esconde-se; ainda a carregar: volta-se a verificar quando chegar
+      const fotoDe = () => { const e = ph.querySelector(':scope > img, :scope > svg, :scope > .fp-letra'); if (e && e.tagName === 'IMG') { if (e.complete && !e.naturalWidth) { e.style.display = 'none'; return null; } if (!e.complete) return null; } return e; };
+      const im = fotoDe();
+      // recomeçar (pode correr outra vez quando uma foto carrega)
+      if (!lado && tag && tag.parentElement !== ph) { const pr = tag.parentElement; ph.appendChild(tag); if (pr.classList.contains('fp-pr')) pr.remove(); }
+      ph.style.removeProperty('--fs'); if (im) { im.style.right = ''; im.style.removeProperty('width'); }
+      // 1) o texto cabe: nome inteiro, nada sai do produto, a foto fica com pelo menos 36% da altura
+      const textoMal = () => { const T = t.getBoundingClientRect(), P = ph.getBoundingClientRect(), G = tag?.getBoundingClientRect(), X = txt.getBoundingClientRect();
         return t.scrollHeight > t.clientHeight + 1 || nome.scrollWidth > nome.clientWidth + 1
-          || (!t.hasAttribute('data-lado') && P.height < T.height * 0.36)
+          || (!lado && P.height < T.height * 0.36)
           || (G && (G.left < T.left - 1 || G.right > T.right + 1 || G.bottom > T.bottom + 1))
-          || cruza(G, P) || cruza(G, X) || cruza(P, X); };
-      for (let k = 0; k < 18 && mal(); k++) {
+          || cruza(P, X) || cruza(G, X) || (tag && tag.parentElement !== ph && !lado && cruza(G, P)); };
+      const encolher = () => { for (let k = 0; k < 18 && textoMal(); k++) {
         for (const e of [nome, tam].filter(Boolean)) e.style.fontSize = (parseFloat(getComputedStyle(e).fontSize) * 0.93) + 'px';
-        if (k > 4 && tag) tag.style.fontSize = (parseFloat(getComputedStyle(tag).fontSize) * 0.93) + 'px';
-      }
-      t.dataset.encaixe = mal() ? 'falha' : 'ok';
+        if (k > 4 && tag) tag.style.fontSize = (parseFloat(getComputedStyle(tag).fontSize) * 0.93) + 'px'; } };
+      encolher();
+      // 2) a etiqueta no canto da foto não pode tapar o produto: a foto encosta à esquerda e, se preciso, encolhe até metade
+      const tapa = () => !!(im && tag && tag.parentElement === ph && cruza(im.getBoundingClientRect(), tag.getBoundingClientRect()));
+      if (tapa()) { im.style.right = 'auto'; if (im.tagName !== 'IMG') im.style.setProperty('width', '62%'); }
+      for (let f = 94; f >= 50 && tapa(); f -= 6) ph.style.setProperty('--fs', f + '%');
+      // 3) não chegou: a etiqueta passa para baixo da descrição, e o texto volta a ser verificado
+      if (tapa()) { ph.style.removeProperty('--fs'); im.style.right = ''; im.style.removeProperty('width');
+        const pr = document.createElement('div'); pr.className = 'fp-pr'; pr.appendChild(tag); t.insertBefore(pr, txt.nextSibling); encolher(); }
+      t.dataset.encaixe = (textoMal() || tapa()) ? 'falha' : 'ok';
     }
   }
   // flipbook: em ecrãs largos abre em duas páginas (capa sozinha à direita); em telemóvel vira uma página de cada vez
@@ -190,6 +205,8 @@
       el.tabIndex = 0; el.onkeydown = e => { if (e.key === 'ArrowRight') ir(1); if (e.key === 'ArrowLeft') ir(-1); };
       pos();
       encaixar(el); document.fonts?.ready?.then(() => encaixar(el));
+      // as fotos reais chegam depois: quando cada uma carrega, volta a verificar que a etiqueta não tapa o produto
+      el.querySelectorAll('.fp-ph > img').forEach(i => { if (!i.complete) { i.addEventListener('load', () => encaixar(el), { once: true }); i.addEventListener('error', () => encaixar(el), { once: true }); } });
       return { dupla };
     }
     let atual = montar();
