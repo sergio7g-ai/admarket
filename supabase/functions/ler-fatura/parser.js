@@ -28,7 +28,7 @@ const perto = (a, b) => Math.abs(a - b) <= Math.max(0.02, b * 0.006);
 // separa a linha em descrição + números finais
 function partir(linha) {
   const t = linha.replace(/[€|\[\]]/g, ' ').replace(/(\d)(un|uni|cx|emb)\b/gi, '$1 $2').replace(/^(\d{11,13}) (\d{1,2}) /, '$1$2 ').replace(/(\d) ,(\d)/g, '$1,$2').replace(/(\s\d{1,4}) (\d{2})\s*$/, '$1,$2').trim().split(/\s+/)
-    .map(x => /^[OQDo]{1,2}$/.test(x) ? '0'
+    .map(x => /^[OQDo]{1,2}$/.test(x) ? '0' : /^[DOQ]\d{2,}$/.test(x) ? '0' + x.slice(1)
       : /^[\dOolI.,%]+$/.test(x) && /\d/.test(x) ? x.replace(/[Oo]/g, '0').replace(/[lI]/g, '1') : x); // erros típicos de OCR
   if (t.length) { const d = t[0].replace(/\D/g, ''); if (d.length >= 8 && d.length / t[0].length > 0.75) t[0] = d; }
   // números do fim da linha; ignora lixo curto do OCR no meio (ex.: "un" lido como "มก", "23-")
@@ -84,7 +84,7 @@ function pos(iq, ip, id, it, v) {
   return { iq, ip, id, ii, it, n: v.length };
 }
 
-function linhaCom(m, p) {
+function linhaCom(m, p, deduzir = true) {
   let v = p.nums.map(num);
   if (v.length > m.n) {                       // números a mais no início fazem parte da descrição (ex.: "120 g")
     const extra = p.nums.slice(0, v.length - m.n);
@@ -94,15 +94,63 @@ function linhaCom(m, p) {
   const q = v[m.iq], tot = v[m.it]; let pr = v[m.ip];
   if (Number.isInteger(pr) && pr >= 100 && perto(q * pr / 100, tot)) pr = pr / 100;
   let d = m.id >= 0 ? v[m.id] : 0;
-  if (m.id === -2 && !perto(q * pr, tot)) { d = descDeduzido(q, pr, tot); if (d == null) return null; }
+  if (m.id === -2 && !perto(q * pr, tot)) { if (!deduzir) return null; d = descDeduzido(q, pr, tot); if (d == null) return null; }
   if (!(q > 0 && pr > 0) || !perto(q * pr * (1 - d / 100), tot)) return null;
   return { ean: p.ean, descricao: p.desc, quantidade: q, preco_unit: pr, desconto_pct: d,
            iva_pct: m.ii >= 0 ? v[m.ii] : null, total: tot };
 }
 
+// Resolve uma linha sem inventar: o total da linha é o último número; procura qtd × preço × (1 − desconto) = total,
+// em que o desconto é 0 ou um número que está mesmo na linha (nunca uma taxa de IVA). Prefere qtd inteira e preço com cêntimos.
+function resolver(p) {
+  const v = p.nums.map(num);
+  const n = v.length; if (n < 2) return null;
+  const tot = v[n - 1]; if (!(tot > 0)) return null;
+  // quantidade que o OCR colou ao fim da descrição ("... 250g 20")
+  const mq = p.desc.match(/\s(\d{1,3})$/);
+  const qExtra = mq && !/\d\s*(g|kg|l|ml|cl)$/i.test(p.desc.slice(0, -mq[0].length)) ? +mq[1] : null;
+  const qs = v.slice(0, n - 1).map((x, i) => ({ x, i })).filter(o => o.x > 0);
+  if (qExtra) qs.push({ x: qExtra, i: -1 });
+  let melhor = null;
+  for (const Q of qs) for (let ip = 0; ip < n - 1; ip++) {
+    if (ip === Q.i) continue;
+    const brutos = [v[ip]]; if (Number.isInteger(v[ip]) && v[ip] >= 10) brutos.push(v[ip] / 100);   // vírgula perdida
+    for (const pr of brutos) {
+      if (!(pr > 0)) continue;
+      const resto = v.slice(0, n - 1).map((x, i) => ({ x, i })).filter(o => o.i !== Q.i && o.i !== ip);
+      const ds = [{ d: 0, explicito: resto.some(o => o.x === 0) }];
+      for (const o of resto) if (o.x > 0 && o.x < 100 && !IVAS.includes(o.x)) ds.push({ d: o.x, explicito: true, i: o.i });
+      for (const D of ds) {
+        if (!perto(Q.x * pr * (1 - D.d / 100), tot)) continue;
+        let sc = 0;
+        if (Number.isInteger(Q.x)) sc += 3;
+        if (!Number.isInteger(pr)) sc += 2;
+        if (pr !== v[ip]) sc -= 1;                        // usou a correção da vírgula
+        if (Q.i >= 0 && Q.i < ip) sc += 1;                // a quantidade vem antes do preço
+        if (Q.i === -1) sc -= 1;
+        if (D.explicito) sc += 1;
+        if (resto.some(o => IVAS.includes(o.x))) sc += 1; // sobra uma taxa de IVA: colunas coerentes
+        if (!melhor || sc > melhor.sc) melhor = { sc, q: Q.x, pr, d: D.d, qExtra: Q.i === -1 };
+      }
+    }
+  }
+  if (!melhor) {
+    // o OCR trocou um algarismo do preço (0,95 → 0,90): se total ÷ qtd dá cêntimos certos, é esse o custo (é o que interessa)
+    for (const Q of qs) {
+      if (!Number.isInteger(Q.x) || Q.x < 1 || Q.x > 999 || IVAS.includes(Q.x) && qs.length > 1 && Q.i > 0) continue;
+      const pr = tot / Q.x;
+      if (pr > 0 && Math.abs(pr * 100 - Math.round(pr * 100)) < 1e-6) { melhor = { q: Q.x, pr: Math.round(pr * 100) / 100, d: 0, qExtra: Q.i === -1, calculado: true }; break; }
+    }
+    if (!melhor) return null;
+  }
+  const iva = v.slice(0, n - 1).find(x => IVAS.includes(x)) ?? null;
+  return { ean: p.ean, descricao: melhor.qExtra ? p.desc.slice(0, -mq[0].length).trim() : p.desc, quantidade: melhor.q, preco_unit: melhor.pr,
+           desconto_pct: melhor.d, iva_pct: iva, total: tot, ...(melhor.calculado ? { calculado: true } : {}) };
+}
+
 // texto -> { linhas, modelo, metodo, confianca }
 export function lerLinhas(texto, modelo, qr = null) {
-  const partes = texto.split(/\r?\n/).map(partir).filter(p => p.desc.length > 2 && p.nums.length >= 3);
+  const partes = texto.split(/\r?\n/).map(partir).filter(p => p.desc.length > 2 && (p.nums.length >= 3 || (p.ean && p.nums.length >= 2)));
   let usado = modelo, metodo = 'modelo';
   if (!usado) {
     const votos = {};
@@ -111,7 +159,8 @@ export function lerLinhas(texto, modelo, qr = null) {
     usado = top ? JSON.parse(top[0]) : null; metodo = 'regras';
   }
   // cada linha usa o padrão da maioria; se falhar (o OCR perdeu ou juntou colunas), tenta o seu próprio padrão
-  const res = partes.map(p => (usado && linhaCom(usado, p)) || (() => { const g = adivinhar(p.nums); return g ? linhaCom(g, p) : null; })());
+  // 1.º resolve cada linha por si (total = último número, sem descontos inventados); 2.º o padrão do fornecedor/maioria, só se for coerente
+  const res = partes.map(p => resolver(p) || (usado && linhaCom(usado, p, false)) || null);
   const linhas = res.filter(Boolean);
   // se só falhou uma linha e há QR, o total em falta é (total sem IVA do QR − soma das outras)
   const falhas = partes.filter((p, i) => !res[i] && /^\d{8,14}$/.test(p.ean || ''));
@@ -129,8 +178,10 @@ export function lerLinhas(texto, modelo, qr = null) {
     if (!/^(\d{8}|\d{12,14})$/.test(p.ean || '') || vistos.has(p.ean) || !/[a-zà-ú]{3,}/i.test(p.desc)) continue;
     const v = p.nums.map(num).filter(x => x != null);
     const q = v.find(x => Number.isInteger(x) && x > 0 && x < 1000) ?? 1;
-    const pr = v.find(x => !Number.isInteger(x) && x > 0) ?? 0;
-    linhas.push({ ean: p.ean, descricao: p.desc, quantidade: q, preco_unit: pr, desconto_pct: 0, iva_pct: null, total: Math.round(q * pr * 100) / 100, incerta: true });
+    const tot = v.length >= 2 && !Number.isInteger(v[v.length - 1]) ? v[v.length - 1] : null;
+    const outro = v.slice(0, tot != null ? -1 : undefined).find(x => !Number.isInteger(x) && x > 0);
+    const pr = outro ?? (tot != null && q > 0 ? Math.round(tot / q * 10000) / 10000 : 0);
+    linhas.push({ ean: p.ean, descricao: p.desc, quantidade: q, preco_unit: pr, desconto_pct: 0, iva_pct: null, total: tot ?? Math.round(q * pr * 100) / 100, incerta: true });
     vistos.add(p.ean);
   }
   return { linhas, modelo: usado, metodo, confianca: partes.length ? linhas.filter(l => !l.incerta).length / partes.length : 0 };
