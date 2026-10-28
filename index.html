@@ -583,6 +583,29 @@ const IC={
 function avatar(size){const s=S.store;return s.logo?`<span class="avatar" style="width:${size}px;height:${size}px"><img src="${s.logo}" alt=""></span>`:`<span class="avatar" style="width:${size}px;height:${size}px;background:linear-gradient(135deg,${s.c1},${s.c2});color:#fff">${esc(initials(s.name))}</span>`}
 
 /* posts */
+/* nome curto para as publicações: nomes compridos de fatura/site tiram-se palavras de enchimento e cortam-se ao essencial.
+   O dono pode escrever outro nome (fica em S.nomesPost). O nome completo continua na app e na legenda. */
+const ENCHIMENTO=new Set(['super','ultra','extra','mega','concentrado','perfumado','cremoso','suave','original','classico','clássico','tradicional','premium','gourmet','especial','selecao','seleção','qualidade','pack','poupanca','poupança','familiar','familia','família','formato','embalagem','maquina','máquina','barra','tubo','garrafa','lata','frasco','saco','caixa','unidade','unidades','und','emb']);
+const MANTER_COM=new Set(['virgem','gordo','meio','magro','sem','com','zero']);   // "virgem extra", "meio gordo", "sem lactose"
+const LIGACAO=new Set(['de','da','do','das','dos','e','com','para','em','ao','à','a','o']);
+function nomeCurto(n,max=24){
+  n=String(n||'').replace(/\s+/g,' ').trim();if(n.length<=max)return n;
+  const ws=n.split(' '),fora=w=>w.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  // tira enchimento, mas nunca a 1.ª palavra (o que é o produto) nem a palavra a seguir a "virgem", "meio", "sem"…
+  let k=ws.filter((w,i)=>i===0||!/\d/.test(w)).filter((w,i,a)=>i===0||!(ENCHIMENTO.has(w.toLowerCase())||ENCHIMENTO.has(fora(w)))||MANTER_COM.has(fora(a[i-1]||'')));
+  const limpa=a=>{a=a.slice();while(a.length>1&&LIGACAO.has(fora(a[a.length-1])))a.pop();return a};
+  k=limpa(k);
+  // ainda comprido: tira palavras do fim, mas guarda o que muda o produto ("sem lactose", "meio gordo", "magro", "zero")
+  const prot=new Set();k.forEach((w,i)=>{const f=fora(w);if(MANTER_COM.has(f)||f==='lactose'||f==='acucar'||f==='gluten'){prot.add(i);if(f!=='magro'&&f!=='zero'&&i+1<k.length)prot.add(i+1)}});
+  let idx=k.map((w,i)=>i);
+  while(idx.map(i=>k[i]).join(' ').length>max&&idx.length>2){
+    let j=-1;for(let t=idx.length-1;t>0;t--)if(!prot.has(idx[t])){j=t;break}
+    if(j<0)break;idx.splice(j,1);
+    while(idx.length>1&&LIGACAO.has(fora(k[idx[idx.length-1]]))&&!prot.has(idx[idx.length-1]))idx.pop();
+  }
+  return idx.map(i=>k[i]).join(' ');
+}
+const nomePost=p=>(S.nomesPost&&S.nomesPost[p.name])||nomeCurto(p.name);
 function postHTML(p,style){
   if(!PHOTOS[p.id])return postIllustrated(p,style);
   const s=S.store,c1=s.c1,c2=s.c2,i1=ink(c1),i2=ink(c2),sg=suggest(p),cd=code(p),pc=i1==='#FFFFFF'?c1:'#0F172A';
@@ -593,7 +616,7 @@ function postHTML(p,style){
   if(style===0)return `<div class="post" style="background:${c1};color:${i1}">
     <div class="p-top" data-z="topo">${logo}<span>${esc(s.name)}</span></div>
     <div data-z="txt" style="position:absolute;left:6cqw;top:23cqw;width:48cqw"><span class="p-chip" style="background:${c2};color:${i2}">PROMOÇÃO</span>
-      <div class="p-name" style="font-size:7.6cqw;margin-top:3.5cqw">${esc(p.name)}</div><div class="p-size" style="font-size:4.2cqw">${esc(p.size)}</div>${comp?`<div class="p-comp" style="opacity:.85;font-size:3.6cqw">${comp}</div>`:''}</div>
+      <div class="p-name" style="font-size:7.6cqw;margin-top:3.5cqw">${esc(nomePost(p))}</div><div class="p-size" style="font-size:4.2cqw">${esc(p.size)}</div>${comp?`<div class="p-comp" style="opacity:.85;font-size:3.6cqw">${comp}</div>`:''}</div>
     <div class="p-ph" data-z="foto" style="right:6cqw;top:22cqw;width:38cqw;height:50cqw">${ph}</div>
     <div data-z="preco" style="position:absolute;left:5cqw;bottom:12cqw;background:${c2};color:${i2};border-radius:99px;padding:2.4cqw 5cqw;transform:rotate(-4deg);box-shadow:0 2cqw 4cqw rgba(0,0,0,.2)"><span class="p-price" style="font-size:11cqw">${eur(sg.price)}</span></div>
     <div class="p-foot" data-z="rodape" style="text-align:right">Diga <b>${cd}</b> na caixa</div></div>`;
@@ -601,7 +624,7 @@ function postHTML(p,style){
     <div style="position:absolute;inset:0 0 auto 0;height:21cqw;background:${c1}"></div>
     <div class="p-top" data-z="topo" style="color:${i1}">${logo}<span>${esc(s.name)}</span></div>
     <div class="p-ph" data-z="foto" style="left:6cqw;top:27cqw;width:40cqw;height:54cqw">${ph}</div>
-    <div data-z="txt" style="position:absolute;left:51cqw;right:5cqw;top:28cqw"><div class="p-name" style="font-size:6.6cqw">${esc(p.name)}</div><div class="p-size" style="font-size:3.8cqw">${esc(p.size)}</div>
+    <div data-z="txt" style="position:absolute;left:51cqw;right:5cqw;top:28cqw"><div class="p-name" style="font-size:6.6cqw">${esc(nomePost(p))}</div><div class="p-size" style="font-size:3.8cqw">${esc(p.size)}</div>
       <div class="p-price" style="color:${pc};font-size:12.5cqw;margin-top:4cqw">${eur(sg.price)}</div>
       <span class="p-chip" style="background:${c2};color:${i2};margin-top:2.5cqw;font-size:3.4cqw">ESTA SEMANA</span>${comp?`<div class="p-comp" style="color:#475569;font-size:3.4cqw">${comp}</div>`:''}</div>
     <div class="p-foot" data-z="rodape" style="color:#475569;font-size:3.8cqw">Diga <b style="color:#0F172A">${cd}</b> na caixa · válido esta semana</div></div>`;
@@ -609,7 +632,7 @@ function postHTML(p,style){
     <div data-z="topo" style="position:absolute;left:6cqw;top:6cqw;font-size:7cqw;font-weight:800">SÓ ESTA SEMANA</div>
     <div data-z="cartao" data-caixa data-fixo style="position:absolute;left:6cqw;right:6cqw;top:19cqw;height:58cqw;background:#FFFFFF;color:#0F172A;border-radius:4cqw;transform:rotate(-2.5deg);box-shadow:0 2cqw 6cqw rgba(0,0,0,.18);display:flex;gap:3cqw;padding:4cqw;align-items:center">
       <div data-z="foto" style="width:40%;height:100%;display:grid;place-items:center">${ph.replace('<img','<img style="max-width:100%;max-height:100%;object-fit:contain"')}</div>
-      <div data-z="txt" style="flex:1;min-width:0"><div class="p-name" style="font-size:6.4cqw">${esc(p.name)}</div><div class="p-size" style="font-size:3.6cqw">${esc(p.size)}</div>
+      <div data-z="txt" style="flex:1;min-width:0"><div class="p-name" style="font-size:6.4cqw">${esc(nomePost(p))}</div><div class="p-size" style="font-size:3.6cqw">${esc(p.size)}</div>
         <div class="p-price" style="color:${pc};font-size:12cqw;margin-top:3cqw">${eur(sg.price)}</div>${comp?`<div class="p-comp" style="color:#475569;font-size:3.3cqw">${comp}</div>`:''}</div></div>
     <div class="p-foot" data-z="rodape" style="display:flex;align-items:center;gap:3cqw">${logo2}<span><b style="font-family:var(--f-head);letter-spacing:0">${esc(s.name)}</b><br>${esc(s.city)}</span><span style="margin-left:auto;text-align:right">Diga na caixa<br><b>${cd}</b></span></div></div>`;
 }
@@ -621,20 +644,20 @@ function postIllustrated(p,style){
   const pc=i1==='#FFFFFF'?c1:'#0F172A';
   if(style===0)return `<div class="post" style="background:${c1};color:${i1}">
     <div class="p-top" data-z="topo">${logo}<span>${esc(s.name)}</span></div>
-    <div data-z="txt" style="position:absolute;left:6cqw;top:27cqw;right:${p.name.length>12?47:6}cqw"><span class="p-chip" style="background:${c2};color:${i2}">PROMOÇÃO</span>
-      <div class="p-name" style="margin-top:4cqw;font-size:${p.name.length>34?6:p.name.length>22?7:p.name.length>12?8.4:10}cqw">${esc(p.name)}</div><div class="p-size">${esc(p.size)}</div>${comp?`<div class="p-comp" style="opacity:.85;max-width:48cqw">${comp}</div>`:''}</div>
+    <div data-z="txt" style="position:absolute;left:6cqw;top:27cqw;right:${nomePost(p).length>12?47:6}cqw"><span class="p-chip" style="background:${c2};color:${i2}">PROMOÇÃO</span>
+      <div class="p-name" style="margin-top:4cqw;font-size:${nomePost(p).length>34?6:nomePost(p).length>22?7:nomePost(p).length>12?8.4:10}cqw">${esc(nomePost(p))}</div><div class="p-size">${esc(p.size)}</div>${comp?`<div class="p-comp" style="opacity:.85;max-width:48cqw">${comp}</div>`:''}</div>
     <div data-z="preco" style="position:absolute;right:5cqw;bottom:13cqw;width:38cqw;height:38cqw;border-radius:50%;background:${c2};color:${i2};display:grid;place-items:center;transform:rotate(-8deg)"><span class="p-price" style="font-size:11cqw">${eur(sg.price)}</span></div>
     <div class="p-foot" data-z="rodape">Só esta semana</div></div>`;
   if(style===1)return `<div class="post" style="background:#FFFFFF;color:#0F172A;box-shadow:inset 0 0 0 1px rgba(15,23,42,.06)">
     <div style="position:absolute;inset:0 0 auto 0;height:23cqw;background:${c1}"></div>
     <div class="p-top" data-z="topo" style="color:${i1}">${logo}<span>${esc(s.name)}</span></div>
-    <div data-z="txt" style="position:absolute;left:6cqw;right:6cqw;top:31cqw"><div class="p-name" style="font-size:11cqw">${esc(p.name)}</div><div class="p-size">${esc(p.size)}</div>
+    <div data-z="txt" style="position:absolute;left:6cqw;right:6cqw;top:31cqw"><div class="p-name" style="font-size:11cqw">${esc(nomePost(p))}</div><div class="p-size">${esc(p.size)}</div>
       <div style="display:flex;align-items:center;gap:4cqw;margin-top:6cqw"><span class="p-price" style="color:${pc}">${eur(sg.price)}</span><span class="p-chip" style="background:${c2};color:${i2}">ESTA SEMANA</span></div>${comp?`<div class="p-comp" style="color:#475569">${comp}</div>`:''}</div>
     <div class="p-foot" data-z="rodape" style="color:#475569">Promoção válida esta semana na loja</div></div>`;
   return `<div class="post" style="background:${c2} repeating-linear-gradient(135deg,rgba(255,255,255,.10) 0 4cqw,rgba(255,255,255,0) 4cqw 8cqw);color:${i2}">
     <div data-z="topo" style="position:absolute;left:6cqw;top:6cqw;font-size:7cqw;font-weight:800">SÓ ESTA SEMANA</div>
     <div data-z="cartao" data-caixa style="position:absolute;left:8cqw;right:8cqw;top:22cqw;background:#FFFFFF;color:#0F172A;border-radius:4cqw;padding:6cqw;transform:rotate(-3deg);box-shadow:0 2cqw 6cqw rgba(0,0,0,.18)">
-      <div class="p-name" style="font-size:8.5cqw">${esc(p.name)} <span style="font-weight:600;opacity:.55;font-size:5.5cqw">${esc(p.size)}</span></div>
+      <div class="p-name" style="font-size:8.5cqw">${esc(nomePost(p))} <span style="font-weight:600;opacity:.55;font-size:5.5cqw">${esc(p.size)}</span></div>
       <div class="p-price" style="color:${pc};margin-top:3cqw">${eur(sg.price)}</div>${comp?`<div class="p-comp" style="color:#475569">${comp}</div>`:''}</div>
     <div class="p-foot" data-z="rodape" style="display:flex;align-items:center;gap:3cqw">${logo2}<span><b style="font-family:var(--f-head);letter-spacing:0">${esc(s.name)}</b><br>${esc(s.city)}</span></div></div>`;
 }
@@ -835,6 +858,7 @@ function vPosts(){
   const days=[...Array(7)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()+i+1);return d});
   return `<div class="ph"><div><h1>Publicações</h1><p>Três designs por promoção aprovada, o carrossel com as promoções da semana e um reels do produto com a melhor promoção. Tudo agendado para o melhor horário.</p></div></div>
   ${todo.map(x=>`<section class="card pad"><div class="card-h"><div><span class="label">Escolher design</span><h2>${esc(x.p.name)} a ${eur(x.s.price)}</h2></div><span class="xs muted">${networks().join(', ')}</span></div>
+    <label class="small" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-4px 0 12px"><span class="muted">Nome nas publicações</span><input type="text" data-nome-post="${esc(x.p.name)}" value="${esc(nomePost(x.p))}" maxlength="40" style="flex:1;min-width:180px;max-width:320px;padding:6px 10px;border:1px solid var(--line,#E2E8F0);border-radius:8px;font:inherit"></label>
     <div class="posts3">${[0,1,2].map(i=>`<div class="pp">${postHTML(x.p,i)}<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="small"><b>${STYLE_NAMES[i]}</b></span><button class="btn sm primary" data-act="choose" data-id="${x.p.id}" data-idx="${i}">Escolher</button></div></div>`).join('')}</div></section>`).join('')}
   ${vCarousel(st)}${vReel(st)}
   <section class="card pad"><div class="card-h"><h2>Próximos 7 dias</h2><span class="xs muted">Horários sugeridos (simulação; na fase 2 vêm do Metricool)</span></div>
@@ -1169,7 +1193,7 @@ function productSlide(x,n,N){
     <span style="position:absolute;right:5cqw;top:6cqw;font:600 3.6cqw var(--f-ui);color:${i1};opacity:.85">${n}/${N}</span>
     <div data-z="foto" style="position:absolute;left:6cqw;right:6cqw;top:21cqw;height:42cqw">${phImg(p)}</div>
     ${off?`<span class="p-chip" style="position:absolute;right:6cqw;top:22cqw;background:${c2};color:${i2}">-${off}%</span>`:''}
-    <div data-z="txt" style="position:absolute;left:6cqw;right:6cqw;bottom:13cqw"><div class="p-name" style="font-size:6.4cqw">${esc(p.name)}</div><div class="p-size" style="font-size:3.6cqw">${esc(p.size)}</div>
+    <div data-z="txt" style="position:absolute;left:6cqw;right:6cqw;bottom:13cqw"><div class="p-name" style="font-size:6.4cqw">${esc(nomePost(p))}</div><div class="p-size" style="font-size:3.6cqw">${esc(p.size)}</div>
       <div style="display:flex;align-items:baseline;gap:3cqw;margin-top:2cqw"><span class="p-price" style="color:${pc};font-size:11cqw">${eur(sg.price)}</span></div></div>
     <div class="p-foot" data-z="rodape" style="color:#475569;font-size:3.5cqw">Só esta semana</div></div>`;
 }
@@ -1208,7 +1232,7 @@ function vReel(st){
       <div class="phone"><div class="reel">
         <div class="scene" style="background:${c1};color:${i1}"><div data-z="txt" style="position:absolute;left:8cqw;right:8cqw;top:12cqw;font:800 10cqw/1.05 var(--f-head);letter-spacing:-.03em">${esc(hook)}</div><div class="rz" data-z="foto" style="position:absolute;left:10cqw;right:10cqw;bottom:16cqw;height:80cqw">${phImg(p)}</div></div>
         <div class="scene" style="background:#FFFFFF;color:#0F172A"><div data-z="foto" style="position:absolute;left:12cqw;right:12cqw;top:16cqw;height:64cqw">${phImg(p)}</div>
-          <div data-z="txt" style="position:absolute;left:8cqw;right:8cqw;bottom:22cqw"><div style="font:700 7cqw/1.1 var(--f-head)">${esc(p.name)}</div><div style="font:500 4.5cqw var(--f-ui);color:#64748B;margin-top:2cqw">${esc(p.size)}</div>
+          <div data-z="txt" style="position:absolute;left:8cqw;right:8cqw;bottom:22cqw"><div style="font:700 7cqw/1.1 var(--f-head)">${esc(nomePost(p))}</div><div style="font:500 4.5cqw var(--f-ui);color:#64748B;margin-top:2cqw">${esc(p.size)}</div>
           <div style="height:5cqw"></div><div class="rp" style="font:800 20cqw/1 var(--f-head);letter-spacing:-.04em;color:${pc}">${eur(sg.price)}</div></div>
           <span class="p-chip" style="position:absolute;right:8cqw;top:8cqw;background:${c2};color:${i2};font-size:6cqw">PROMOÇÃO</span></div>
         <div class="scene" style="background:${c2};color:${i2}"><div data-z="txt" style="position:absolute;left:8cqw;right:8cqw;top:18cqw;font:800 11cqw/1.05 var(--f-head)">Só esta semana</div>
@@ -1220,7 +1244,7 @@ function vReel(st){
         <div class="when" style="background:var(--green-soft)">${IC.spark.replace('<svg','<svg style="color:var(--green-deep)"')}<div><b>${esc(p.name)} a ${eur(sg.price)}</b><span>${esc(why)}</span></div></div>
         <ol class="story">
           <li><b>0–3 s · Gancho</b><span>Texto "${esc(hook)}" com o produto a entrar em zoom.</span><em>Locução: "${esc(hook)}!"</em></li>
-          <li><b>3–6 s · Preço</b><span>Aparece o preço da loja em grande.</span><em>Locução: "${esc(p.name)}, só ${eur(sg.price).replace(/\s*€/,' euros')}."</em></li>
+          <li><b>3–6 s · Preço</b><span>Aparece o preço da loja em grande.</span><em>Locução: "${esc(nomePost(p))}, só ${eur(sg.price).replace(/\s*€/,' euros')}."</em></li>
           <li><b>6–9 s · Chamada</b><span>Nome, localidade e logótipo da loja.</span><em>Locução: "Só esta semana, no ${esc(s.name)}."</em></li>
         </ol>
         <p class="xs muted">Legenda sugerida: "${esc(p.name)} a ${eur(sg.price)} 🔥 Só esta semana no ${esc(s.name)}." · Música: faixa com licença comercial, nunca um som em tendência sem licença.</p>
@@ -1329,6 +1353,7 @@ document.addEventListener('change',e=>{
   const t=e.target;
   if(t.id==='inv-photo'||t.id==='inv-pdf'){readInvoiceFile(t.files[0]);t.value='';return}
   if(t.id==='cfg-logo'&&t.files[0]){shrink(t.files[0],160).then(url=>{S.store.logo=url;const cols=extractColors(shrink.last);if(cols){S.store.c1=cols[0];if(cols[1])S.store.c2=cols[1]}render();toast('Logótipo carregado e cores atualizadas')}).catch(()=>toast('Não foi possível ler esta imagem. Experimente um PNG ou JPG.'));return}
+  if(t.dataset.nomePost!=null){S.nomesPost=S.nomesPost||{};const v=t.value.replace(/\s+/g,' ').trim();if(v&&v!==nomeCurto(t.dataset.nomePost))S.nomesPost[t.dataset.nomePost]=v;else delete S.nomesPost[t.dataset.nomePost];save();render();return}
   if(t.dataset.cfg){S.store[t.dataset.cfg]=t.value;render();return}
   if(t.dataset.margin){const v=Math.max(0,Math.min(80,parseInt(t.value)||0));S.margins[t.dataset.margin]=v;render();toast(`Margem de ${t.dataset.margin.toLowerCase()}: ${v}%`)}
 });
