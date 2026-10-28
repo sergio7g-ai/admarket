@@ -40,6 +40,11 @@ const LONGOS = [
         const cs = [...p.querySelectorAll('.fp-tile')].map(c => c.getBoundingClientRect());
         for (let a = 0; a < cs.length; a++) for (let z = a + 1; z < cs.length; z++) { const w = Math.min(cs[a].right, cs[z].right) - Math.max(cs[a].left, cs[z].left), h = Math.min(cs[a].bottom, cs[z].bottom) - Math.max(cs[a].top, cs[z].top); if (w > 1 && h > 1) probs.push(`pág ${i + 1}: cartões sobrepostos`); }
         const foot = p.querySelector('.fp-foot')?.getBoundingClientRect(); if (foot) for (const r of cs) if (r.bottom > foot.top + 1 && r.top < foot.bottom) probs.push(`pág ${i + 1}: cartão por cima do rodapé`);
+        const cruza = (a, b) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1;
+        for (const c of p.querySelectorAll('.fp-tile')) { const im = c.querySelector('.fp-ph > img, .fp-ph > svg, .fp-ph > .fp-letra'), g = c.querySelector('.fp-tag'), x = c.querySelector('.fp-txt'), nm = c.querySelector('.fp-nome')?.textContent;
+          if (im && g && cruza(im.getBoundingClientRect(), g.getBoundingClientRect())) probs.push(`pág ${i + 1}: preço por cima da foto (${nm})`);
+          if (im && x && cruza(im.getBoundingClientRect(), x.getBoundingClientRect())) probs.push(`pág ${i + 1}: foto por cima da descrição (${nm})`);
+          if (g && x && cruza(g.getBoundingClientRect(), x.getBoundingClientRect())) probs.push(`pág ${i + 1}: preço por cima da descrição (${nm})`); }
         for (const c of p.querySelectorAll('.fp-tile')) if (c.dataset.encaixe === 'falha') probs.push(`pág ${i + 1}: texto não cabe no cartão (${c.querySelector('.fp-nome')?.textContent})`);
         for (const t of p.querySelectorAll('.fp-tag')) { const r = t.getBoundingClientRect(), T = t.closest('.fp-tile,.fp').getBoundingClientRect(); if (r.left < T.left - 1 || r.right > T.right + 1) probs.push(`pág ${i + 1}: preço cortado`); }
       });

@@ -30,14 +30,15 @@
 .fp-logo{width:10cqw;height:10cqw;border-radius:50%;object-fit:cover;flex:none;display:grid;place-items:center;font:800 4cqw var(--fbh)}
 .fp-foot{position:absolute;left:3.5cqw;right:3.5cqw;bottom:2.4cqw;font:500 2.3cqw/1.3 var(--fbu);color:#64748B;display:flex;justify-content:space-between;gap:3cqw}
 .fp-tile{position:absolute;display:flex;flex-direction:column;padding:2cqw 2.2cqw 2cqw;border-right:.25cqw solid #E5E7EB;border-bottom:.25cqw solid #E5E7EB;background:#fff}
-.fp-ph{position:relative;flex:1 1 auto;min-height:0;display:grid;place-items:center}
+.fp-ph{position:relative;flex:1 1 auto;min-height:0;display:grid;place-items:center;overflow:hidden}
 .fp-ph>img{max-width:100%;max-height:100%;object-fit:contain}
 .fp-ph>svg{width:100%;height:100%}
 .fp-ph .fp-letra{height:70%;max-width:70%;aspect-ratio:1;border-radius:3cqw;display:grid;place-items:center;font:800 9cqw var(--fbh)}
 .fp-txt{flex:none;padding-top:1.2cqw}
 .fp-nome{font:800 3.1cqw/1.12 var(--fbh);letter-spacing:-.01em;overflow-wrap:break-word}
 .fp-tam{font:500 2.3cqw/1.2 var(--fbu);color:#64748B;margin-top:.5cqw}
-.fp-tag{position:absolute;right:0;bottom:0;display:flex;align-items:flex-start;font-family:var(--fbh);font-weight:800;line-height:.82;letter-spacing:-.04em;padding:1.1cqw 1.4cqw 1cqw 1.6cqw;border-radius:1.2cqw;transform:rotate(-4deg);box-shadow:0 .5cqw 1.4cqw rgba(0,0,0,.22);white-space:nowrap}
+.fp-tag{position:relative;display:inline-flex;align-items:flex-start;font-family:var(--fbh);font-weight:800;line-height:.82;letter-spacing:-.04em;padding:1.1cqw 1.4cqw 1cqw 1.6cqw;border-radius:1.2cqw;transform:rotate(-3deg);box-shadow:0 .5cqw 1.4cqw rgba(0,0,0,.22);white-space:nowrap}
+.fp-pr{flex:none;display:flex;justify-content:flex-end;padding:1.4cqw .6cqw .4cqw 0}
 .fp-tag .cw{display:flex;flex-direction:column;align-items:center;margin-left:.08em;letter-spacing:-.02em}
 .fp-tag .c{font-size:.5em}
 .fp-tag .eu{font-size:.36em;margin-top:.12em}
@@ -62,16 +63,18 @@
   }
   // produto numa grelha: foto grande com a etiqueta do preço por cima, nome e tamanho por baixo (nada é cortado: o texto encolhe se for preciso)
   function produto(it, x, y, w, h, c, o = {}) {
+    // três zonas que nunca se tocam: foto, descrição e preço (a etiqueta fica por baixo, nunca por cima da foto)
     const fita = o.fita ? `<span class="fp-fita" style="background:${c.c2};color:${c.i2}">${o.fita}</span>` : '';
-    if (o.lado) return `<div class="fp-tile" data-lado style="left:${x}cqw;top:${y}cqw;width:${w}cqw;height:${h}cqw;flex-direction:row;gap:2cqw;align-items:stretch;padding:3cqw">
-      <div class="fp-ph" style="flex:0 0 52%">${foto(it, c.c1)}</div>
-      <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;position:relative">
+    if (o.lado) return `<div class="fp-tile" data-lado style="left:${x}cqw;top:${y}cqw;width:${w}cqw;height:${h}cqw;flex-direction:row;gap:3cqw;align-items:stretch;padding:4cqw 3cqw 3cqw">
+      <div class="fp-ph" style="flex:0 0 50%">${foto(it, c.c1)}</div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center">
         <div class="fp-txt"><div class="fp-nome" style="font-size:${o.nome || 5.4}cqw">${esc(it.nome)}</div>${it.tamanho ? `<div class="fp-tam" style="font-size:3.2cqw">${esc(it.tamanho)}</div>` : ''}</div>
-        <div style="position:relative;height:${o.tag * 1.15}cqw;margin-top:3cqw">${etiqueta(it.preco, o.tag, c).replace('right:0;', '').replace('class="fp-tag" style="', 'class="fp-tag" style="left:0;right:auto;')}</div>
+        <div class="fp-pr" style="justify-content:flex-start;padding-top:4cqw">${etiqueta(it.preco, o.tag, c)}</div>
       </div>${fita}</div>`;
-    return `<div class="fp-tile" style="left:${x}cqw;top:${y}cqw;width:${w}cqw;height:${h}cqw">
-      <div class="fp-ph">${foto(it, c.c1)}${etiqueta(it.preco, o.tag || 7.5, c)}</div>
-      <div class="fp-txt"><div class="fp-nome" style="${o.nome ? `font-size:${o.nome}cqw` : ''}">${esc(it.nome)}</div>${it.tamanho ? `<div class="fp-tam">${esc(it.tamanho)}</div>` : ''}</div>${fita}</div>`;
+    return `<div class="fp-tile" style="left:${x}cqw;top:${y}cqw;width:${w}cqw;height:${h}cqw${o.fita ? ';padding-top:6.5cqw' : ''}">
+      <div class="fp-ph">${foto(it, c.c1)}</div>
+      <div class="fp-txt"><div class="fp-nome" style="${o.nome ? `font-size:${o.nome}cqw` : ''}">${esc(it.nome)}</div>${it.tamanho ? `<div class="fp-tam">${esc(it.tamanho)}</div>` : ''}</div>
+      <div class="fp-pr">${etiqueta(it.preco, o.tag || 6.5, c)}</div>${fita}</div>`;
   }
 
   function paginas(d) {
@@ -90,7 +93,7 @@
       <div style="position:absolute;left:5cqw;top:20cqw;color:${i1};font:800 15cqw/.9 var(--fbh);letter-spacing:-.05em;text-transform:uppercase">Promoções</div>
       <div style="position:absolute;left:5cqw;top:35cqw;background:${c.tag};color:${c.tagInk};font:800 4cqw var(--fbh);padding:1.2cqw 3cqw;border-radius:1.2cqw;transform:rotate(-2deg);text-transform:uppercase">De ${per}</div>
       ${capa[0] ? produto(capa[0], 3, 47, 94, 50, c, { lado: true, tag: 15, nome: 6, fita: 'Destaque' }).replace('border-right:.25cqw solid #E5E7EB;', '') : ''}
-      ${capa.slice(1).map((it, k) => produto(it, 3 + k * W3, 98, W3, 36, c, { tag: 6.5 })).join('')}
+      ${capa.slice(1).map((it, k) => produto(it, 3 + k * W3, 98, W3, 36, c, { tag: 5.6 })).join('')}
       ${rodape(1)}</div>`);
     // ---- interior: por gama, grelha de 3 colunas; a gama com 4+ produtos abre com o mais forte em 2×2 ----
     const cats = [];
@@ -110,7 +113,7 @@
       if (y + TIT + R > FUNDO) fecha();
       titulo(g.k);
       if (its.length >= 4 && y + 2 * R <= FUNDO) {
-        corpo += produto(its.shift(), 3, y, 2 * W3, 2 * R, c, { tag: 12, nome: 4.6, fita: 'Destaque' });
+        corpo += produto(its.shift(), 3, y, 2 * W3, 2 * R, c, { tag: 11, nome: 4.6, fita: 'Destaque' });
         for (let k = 0; k < 2 && its.length; k++) corpo += produto(its.shift(), 3 + 2 * W3, y + k * R, W3, R, c, {});
         y += 2 * R;
       }
@@ -136,17 +139,18 @@
 
   // encaixe: nenhum nome fica cortado; se o texto não couber, o nome encolhe; a foto nunca fica com menos de 40% do produto
   function encaixar(root) {
+    const cruza = (a, b) => a && b && Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1;
     for (const t of root.querySelectorAll('.fp-tile')) {
-      const nome = t.querySelector('.fp-nome'), tam = t.querySelector('.fp-tam'), ph = t.querySelector('.fp-ph'), tag = t.querySelector('.fp-tag');
+      const nome = t.querySelector('.fp-nome'), tam = t.querySelector('.fp-tam'), ph = t.querySelector('.fp-ph'), tag = t.querySelector('.fp-tag'), txt = t.querySelector('.fp-txt');
       if (!nome || !ph) continue;
-      const T = t.getBoundingClientRect();
-      const mal = () => { const P = ph.getBoundingClientRect(), G = tag?.getBoundingClientRect();
+      const mal = () => { const T = t.getBoundingClientRect(), P = ph.getBoundingClientRect(), G = tag?.getBoundingClientRect(), X = txt.getBoundingClientRect();
         return t.scrollHeight > t.clientHeight + 1 || nome.scrollWidth > nome.clientWidth + 1
-          || (!t.hasAttribute('data-lado') && P.height < T.height * 0.42)
-          || (G && (G.left < T.left - 1 || G.right > T.right + 1)); };
-      for (let k = 0; k < 16 && mal(); k++) {
+          || (!t.hasAttribute('data-lado') && P.height < T.height * 0.36)
+          || (G && (G.left < T.left - 1 || G.right > T.right + 1 || G.bottom > T.bottom + 1))
+          || cruza(G, P) || cruza(G, X) || cruza(P, X); };
+      for (let k = 0; k < 18 && mal(); k++) {
         for (const e of [nome, tam].filter(Boolean)) e.style.fontSize = (parseFloat(getComputedStyle(e).fontSize) * 0.93) + 'px';
-        if (k > 5 && tag) tag.style.fontSize = (parseFloat(getComputedStyle(tag).fontSize) * 0.94) + 'px';
+        if (k > 4 && tag) tag.style.fontSize = (parseFloat(getComputedStyle(tag).fontSize) * 0.93) + 'px';
       }
       t.dataset.encaixe = mal() ? 'falha' : 'ok';
     }
