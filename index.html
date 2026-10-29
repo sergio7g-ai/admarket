@@ -1600,10 +1600,10 @@ document.addEventListener('change',e=>{
 });
 document.addEventListener('input',e=>{const t=e.target;if(t.dataset.cfg&&t.type==='text'){S.store[t.dataset.cfg]=t.value;save()}
   // revisão da fatura: o dono diz quantas unidades tem cada caixa/fardo → custo por unidade e quantidade atualizam logo
-  if(t.dataset.rlUn!=null){const i=+t.dataset.rlUn,l=S.pending?.res?.linhas?.[i],un=parseInt(t.value);if(!l?.detalhe?.emb)return;
-    const c=document.getElementById('rl-cost-'+i),q=document.getElementById('rl-q-'+i);
-    if(un>0){c.value=(l.custo_unit/un).toFixed(4);q.textContent=(l.detalhe.emb.qtd*un)+' ×';t.classList.remove('warn');c.classList.remove('warn')}
-    else{c.value=(+l.custo_unit).toFixed(4);q.textContent=(+l.quantidade)+' ×'}}});
+  if(t.dataset.rlPapel!=null){const i=+t.dataset.rlPapel,x=linhaPapelUI(i);if(!x)return;t.classList.remove('warn');
+    document.getElementById('rl-tot-'+i).textContent=eur(x.tot);document.getElementById('rl-res-'+i).textContent=resTxt(x.uni,x.custo,!!x.l.detalhe?.emb);
+    document.getElementById('rl-cost-'+i).value=x.custo??'';document.getElementById('rl-q-'+i).textContent=x.uni??'';
+    const so=document.getElementById('rl-soma');if(so)so.innerHTML=somaTxt(S.pending)}});
 function bindDrop(){const d=document.getElementById('drop');if(!d)return;
   d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('over')});d.addEventListener('dragleave',()=>d.classList.remove('over'));
   d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('over');readInvoiceFile(e.dataTransfer.files[0])})}
@@ -1771,33 +1771,65 @@ function realReviewHTML(pe){
     <span class="xs muted">${esc(c.numero||'')} ${c.data?'· '+c.data:''} ${c.total?'· total '+eur(c.total):''} · ${how}</span></div></div></div>
     <div class="list" style="margin-top:6px">${(r.linhas||[]).map((l,i)=>`<div style="padding:14px 0;border-top:1px solid var(--line,#E5E7EB);display:flex;flex-direction:column;gap:10px">
       <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap"><div style="min-width:0;flex:1 1 220px"><b>${esc(l.descricao)}</b>${l.ean?`<span class="xs muted" style="display:block">${l.ean}</span>`:''}</div>
-        <div style="display:flex;gap:8px;align-items:center;flex:none"><span class="xs muted num" id="rl-q-${i}">${+l.quantidade} ×</span><input class="edit num${l.incerta?' warn':''}" id="rl-cost-${i}" type="number" step="0.0001" min="0" value="${(+l.custo_unit).toFixed(4)}" aria-label="Custo de ${esc(l.descricao)}" style="width:96px"> <span class="xs muted">€ s/ IVA</span></div></div>
-      ${detalheTxt(l)?`<span class="xs muted">${detalheTxt(l)}</span>`:''}
-      ${l.detalhe?.emb&&!l.detalhe.emb.un?`<label class="small" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="chip c-warn">Quantas unidades tem cada ${embNome(l.detalhe.emb.tipo,1)}?</span><input class="edit num warn" type="number" min="1" step="1" inputmode="numeric" data-rl-un="${i}" placeholder="ex.: 6" style="width:72px"></label>`:l.incerta?'<span class="chip c-warn" style="align-self:flex-start">Confirme o custo</span>':''}
+      </div>${linhaPapelHTML(l,i)}
       ${r.local?'':`<div><span class="label" style="display:block;margin-bottom:6px">É este produto?</span>${escolhaHTML(pe,i)}</div>`}</div>`).join('')}</div>
+    <p class="small" id="rl-soma" style="margin:12px 0 0">${somaTxt(pe)}</p>
     ${r.local?`<div class="acts" style="margin-top:16px"><button class="btn" data-act="real-cancel">Fechar</button></div>
     <div class="real-local"><b class="small">Leitura feita só neste aparelho, nada foi guardado.</b><span class="xs muted">Para guardar estes custos, entre com o seu email e carregue a fatura outra vez.</span>${realBoxHTML()}</div>`
     :`<div class="acts" style="margin-top:16px"><button class="btn" data-act="real-cancel">Descartar</button><button class="btn green" data-act="real-confirm">Confirmar e guardar custos</button></div>
     <p class="xs muted" style="margin-top:12px">Toque na foto do produto certo. Só os produtos confirmados recebem sugestões de promoção; os outros ficam «por confirmar» nas Promoções. O que confirmar fica aprendido: da próxima vez a app já sabe.</p>`}</div>`;
 }
+// Revisão da fatura com os números tal como estão na folha: quantidade, preço (da caixa/fardo ou da unidade), desconto e total da linha.
+// O custo por unidade (que pode ter muitas casas decimais, ex.: 14,40 € ÷ 24 com 6,9% de desconto) só aparece arredondado ao cêntimo, como resultado.
+function papel(l){const e=l.detalhe?.emb;return e?{q:+e.qtd,pr:+e.preco,un:+e.un||0,tipo:e.tipo}:{q:+l.quantidade,pr:+l.preco_unit,un:1,tipo:null}}
+const n2=v=>(Math.round(v*100)/100).toFixed(2);
+function linhaPapelUI(i){const l=S.pending?.res?.linhas?.[i];if(!l)return null;const p=papel(l),g=id=>document.getElementById(id+i);
+  const q=parseFloat(g('rl-qt-')?.value),pr=parseFloat(g('rl-pr-')?.value),d=parseFloat(g('rl-dc-')?.value)||0,un=l.detalhe?.emb?parseInt(document.querySelector(`[data-rl-un="${i}"]`)?.value)||0:1;
+  const Q=q>=0?q:p.q,P=pr>=0?pr:p.pr,tot=Q*P*(1-d/100),uni=un>0?Q*un:null,custo=un>0?P*(1-d/100)/un:null;
+  return {l,q:Q,pr:P,d,un,tot,uni,custo}}
+function linhaPapelHTML(l,i){const p=papel(l),d=+l.desconto_pct||0,emb=!!l.detalhe?.emb,calc=l.detalhe?.calculado,w=c=>c?' warn':'';
+  const tot=p.q*p.pr*(1-d/100),uni=p.un?p.q*p.un:null,custo=p.un?p.pr*(1-d/100)/p.un:null;
+  const f=(id,lab,v,st,wd,warn)=>`<label class="xs muted" style="display:flex;flex-direction:column;gap:3px">${lab}<input class="edit num${w(warn)}" id="${id}${i}" type="number" step="${st}" min="0" inputmode="decimal" data-rl-papel="${i}" value="${v}" style="width:${wd}px"></label>`;
+  return `<div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+    ${f('rl-qt-','Qtd'+(emb?' ('+embNome(p.tipo,2)+')':''),+p.q.toFixed(3),'any',64,calc||l.incerta)}
+    ${emb?`<label class="xs muted" style="display:flex;flex-direction:column;gap:3px">Un. por ${embNome(p.tipo,1)}<input class="edit num${w(!p.un)}" type="number" min="1" step="1" inputmode="numeric" data-rl-un="${i}" data-rl-papel="${i}" value="${p.un||''}" placeholder="ex.: 6" style="width:64px"></label>`:''}
+    ${f('rl-pr-','Preço'+(emb?' '+embNome(p.tipo,1):''),n2(p.pr),'0.01',80,l.incerta)}
+    ${f('rl-dc-','Desc. %',+d.toFixed(2),'0.01',64,false)}
+    <span class="num" style="padding-bottom:8px">= <b id="rl-tot-${i}">${eur(tot)}</b></span></div>
+    <span class="xs muted" id="rl-res-${i}">${resTxt(uni,custo,emb)}</span>
+    ${detalheTxt(l,1)?`<span class="xs muted">${detalheTxt(l,1)}</span>`:''}
+    ${emb&&!p.un?`<span class="chip c-warn" style="align-self:flex-start">Quantas unidades tem cada ${embNome(p.tipo,1)}?</span>`:l.incerta||calc?'<span class="chip c-warn" style="align-self:flex-start">Confira com a folha</span>':''}
+    <input type="hidden" id="rl-cost-${i}" value="${custo??''}"><span hidden id="rl-q-${i}">${uni??''}</span>`}
+const resTxt=(uni,custo,emb)=>uni==null?'Falta dizer quantas unidades tem cada embalagem.':`${+uni.toFixed(3)} un a ${eur(custo)} cada, sem IVA`;
+function somaTxt(pe){const ls=pe.res.linhas||[],c=pe.res.cabecalho||{};let base=0,iva=0;
+  ls.forEach((l,i)=>{const x=document.getElementById('rl-qt-'+i)?linhaPapelUI(i):(()=>{const p=papel(l);return {tot:p.q*p.pr*(1-(+l.desconto_pct||0)/100)}})();base+=x.tot;iva+=x.tot*(+l.iva_pct||0)/100});
+  const ivaF=c.totalIva!=null?+c.totalIva:iva,soma=base+ivaF;
+  if(!(c.total>0))return `Soma das linhas: <b>${eur(base)}</b> sem IVA. Compare com o total da folha.`;
+  const dif=c.total-soma,ok=Math.abs(dif)<=Math.max(0.05,c.total*0.002)||Math.abs(c.total-base)<=0.05;
+  return `Soma das linhas: ${eur(base)} + IVA ${eur(ivaF)} = <b>${eur(soma)}</b> · total da fatura <b>${eur(c.total)}</b> ${ok?'<span class="chip c-green">bate certo</span>':`<span class="chip c-warn">${dif>0?'faltam':'sobram'} ${eur(Math.abs(dif))}</span>`}`}
 // explica a conta da linha: «4 CX × 24 un a 14,40 € a caixa · inclui 2 un oferecidas · desconto financeiro de 2% incluído»
 const EMB_NOME={CX:['caixa','caixas'],CXA:['caixa','caixas'],CXS:['caixa','caixas'],FD:['fardo','fardos'],FDO:['fardo','fardos'],PK:['pack','packs'],PACK:['pack','packs'],TAB:['tabuleiro','tabuleiros'],SC:['saco','sacos'],GRF:['grade','grades'],EMB:['embalagem','embalagens']};
 const embNome=(t,n)=>{const e=EMB_NOME[String(t||'').toUpperCase()]||EMB_NOME.EMB;return n===1?e[0]:e[1]};
-function detalheTxt(l){const d=l.detalhe||{},e=d.emb,p=[];
-  if(e)p.push(e.un?`${+e.qtd} ${embNome(e.tipo,+e.qtd)} × ${+e.un} un, a ${eur(e.preco)} cada ${embNome(e.tipo,1)}`:`${+e.qtd} ${embNome(e.tipo,+e.qtd)} a ${eur(e.preco)} cada`);
+function detalheTxt(l,semEmb){const d=l.detalhe||{},e=d.emb,p=[];
+  if(e&&!semEmb)p.push(e.un?`${+e.qtd} ${embNome(e.tipo,+e.qtd)} × ${+e.un} un, a ${eur(e.preco)} cada ${embNome(e.tipo,1)}`:`${+e.qtd} ${embNome(e.tipo,+e.qtd)} a ${eur(e.preco)} cada`);
   if(d.oferta)p.push(`inclui ${+d.oferta} un oferecidas`);
   if(d.desconto_global)p.push(`desconto financeiro de ${String(d.desconto_global).replace('.',',')}% incluído`);
   if(d.calculado&&!e)p.push('quantidade calculada pelo total da linha');
   return p.join(' · ')}
 ACT['real-cancel']=async()=>{const id=S.pending?.res?.fatura_id;S.pending=null;render();if(id){await REAL.sb.from('faturas').delete().eq('id',id);await loadFaturas();render()}};
 ACT['real-confirm']=async()=>{
-  const pe=S.pending,ls=pe.res.linhas||[];if(REAL.busy)return;REAL.busy=1;
+  const pe=S.pending,ls=pe.res.linhas||[];if(REAL.busy)return;
+  const falta=ls.findIndex((l,i)=>linhaPapelUI(i)?.custo==null);if(falta>=0){toast('Falta dizer quantas unidades tem cada embalagem: '+ls[falta].descricao);document.querySelector(`[data-rl-un="${falta}"]`)?.focus();return}
+  REAL.busy=1;
   try{
     for(let i=0;i<ls.length;i++){
-      const l=ls[i],custo=parseFloat(document.getElementById('rl-cost-'+i).value);
-      const upd={},un=parseInt(document.querySelector(`[data-rl-un="${i}"]`)?.value);
-      if(un>0&&l.detalhe?.emb){upd.quantidade=l.detalhe.emb.qtd*un;upd.incerta=false;upd.detalhe={...l.detalhe,emb:{...l.detalhe.emb,un}};l.quantidade=upd.quantidade}
-      if(Math.abs(custo-l.custo_unit)>1e-4)Object.assign(upd,{preco_unit:custo,desconto_pct:0});
+      const l=ls[i],x=linhaPapelUI(i),upd={};
+      if(x&&x.custo!=null){const pu=x.pr/(x.l.detalhe?.emb?x.un:1);
+        if(Math.abs(x.uni-l.quantidade)>1e-6){upd.quantidade=x.uni;l.quantidade=x.uni}
+        if(Math.abs(pu-l.preco_unit)>1e-5||Math.abs(x.d-l.desconto_pct)>1e-6)Object.assign(upd,{preco_unit:Math.round(pu*10000)/10000,desconto_pct:x.d});
+        if(l.detalhe?.emb&&(x.un!==+l.detalhe.emb.un||x.q!==+l.detalhe.emb.qtd||x.pr!==+l.detalhe.emb.preco))upd.detalhe={...l.detalhe,emb:{...l.detalhe.emb,un:x.un,qtd:x.q,preco:x.pr}};
+        if(Object.keys(upd).length||l.incerta)upd.incerta=false;
+        l.custo_unit=x.custo;document.getElementById('rl-cost-'+i).value=x.custo}
       if(!l.produto_id){const {data:p}=await REAL.sb.from('produtos').insert({loja_id:REAL.loja.id,ean:l.ean,nome:l.descricao}).select('id').single();if(p)upd.produto_id=p.id}
       if(Object.keys(upd).length)await REAL.sb.from('linhas_fatura').update(upd).eq('id',l.id);
     }
