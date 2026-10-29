@@ -489,8 +489,8 @@ const PLAN_PRICE={'Mês grátis':0,'Essencial':29,'Crescer':59,'Completo':99};
 // o que cada plano inclui (o mês grátis tem tudo, como o Completo)
 const PLAN_FEAT={
   'Essencial':{concorrencia:false,postsSemana:2,carrossel:false,reel:false,whatsapp:false},
-  'Crescer':{concorrencia:true,postsSemana:7,carrossel:true,reel:true,whatsapp:false},
-  'Completo':{concorrencia:true,postsSemana:7,carrossel:true,reel:true,whatsapp:true}};
+  'Crescer':{concorrencia:true,postsSemana:3,carrossel:true,reel:true,whatsapp:false},
+  'Completo':{concorrencia:true,postsSemana:3,carrossel:true,reel:true,whatsapp:true}};
 PLAN_FEAT['Mês grátis']=PLAN_FEAT.Completo;
 function tem(f){return (PLAN_FEAT[S?.store?.plan]||PLAN_FEAT.Completo)[f]}
 const NEW_INVOICE={id:'FT 2026/1262',supplier:'Distribuidora Alimentar do Centro, Lda.',date:'21 out 2026',lines:[
@@ -600,13 +600,20 @@ function nextSlot(){
   const porSemana={};for(const p of Object.values(S.promos))if(p.sched){const k=semana(new Date(p.sched.at));porSemana[k]=(porSemana[k]||0)+1}
   for(let i=1;i<60;i++){const d=new Date();d.setDate(d.getDate()+i);if(used.has(dayKey(d)))continue;if((porSemana[semana(d)]||0)>=lim)continue;const time=i%2?'19:00':'12:30';const [h,m]=time.split(':');d.setHours(+h,+m,0,0);return {at:d.toISOString(),day:dayKey(d),time}}
 }
+// força de uma promoção para as redes: quanto fica abaixo da concorrência (pesa mais) e a margem que deixa
+const forca=x=>(x.s.beats?(x.s.low-x.s.price)/x.s.low:0)*1.5+x.s.margin;
+const semanaDe=d=>{const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return dayKey(x)};
 function stats(){
   const all=S.products.map(p=>({p,s:suggest(p),pr:promo(p.id)}));
-  const queue=all.filter(x=>x.pr.status==='pending'&&(tem('concorrencia')?!x.s.semPreco:!x.s.maisCaro)).sort((a,b)=>(b.s.beats-a.s.beats)||((a.p.cat==='Frescos'?0:1)-(b.p.cat==='Frescos'?0:1)));
+  // só as melhores vão para as redes: o plano dá 2 ou 3 publicações por semana; as outras ficam para o folheto
+  const cands=all.filter(x=>x.pr.status==='pending'&&(tem('concorrencia')?!x.s.semPreco:!x.s.maisCaro)).sort((a,b)=>forca(b)-forca(a));
+  const estaSemana=semanaDe(new Date()),limite=tem('postsSemana');
+  const aprovSemana=all.filter(x=>x.pr.status==='approved'&&x.pr.at&&semanaDe(x.pr.at)===estaSemana).length;
+  const vagas=Math.max(0,limite-aprovSemana),queue=cands.slice(0,vagas),soFolheto=cands.slice(vagas);
   const appr=all.filter(x=>x.pr.status==='approved');
   const avg=appr.length?appr.reduce((a,x)=>a+x.s.margin,0)/appr.length:0;
   const clients=S.clientsBase+Object.values(S.promos).reduce((a,p)=>a+(p.clients||0),0);
-  return {all,queue,pending:queue.length,appr,avg,clients,toDesign:appr.filter(x=>x.pr.choice==null).length,scheduled:appr.filter(x=>x.pr.sched)};
+  return {all,queue,soFolheto,limite,vagas,aprovSemana,pending:queue.length,appr,avg,clients,toDesign:appr.filter(x=>x.pr.choice==null).length,scheduled:appr.filter(x=>x.pr.sched)};
 }
 
 /* product art (illustrações; na fase 2 entram as fotos do catálogo) */
@@ -953,11 +960,14 @@ function vPromos(){
   const st=stats(),apr=st.all.filter(x=>x.pr.status==='approved'),rej=st.all.filter(x=>x.pr.status==='rejected');
   const grupos={pending:st.queue,approved:apr,rejected:rej};
   let tab=S.promoTab||'pending';if(!grupos[tab].length&&tab!=='pending'&&!st.queue.length)tab=apr.length?'approved':'pending';
-  const its=grupos[tab],vazio={pending:'Não há promoções por decidir. Carregue uma fatura nova para ver mais.',approved:'Ainda não aprovou nenhuma promoção.',rejected:'Nenhuma promoção rejeitada.'}[tab];
-  return `<div class="ph"><div><h1>Promoções</h1><p>Aprove as da semana. Todas respeitam a sua margem mínima.</p></div></div>
+  const its=grupos[tab],vazio={pending:st.vagas?'Não há promoções por decidir. Carregue uma fatura nova para ver mais.':`Já aprovou as ${st.limite} promoções desta semana para as redes. Na próxima semana a app escolhe as melhores outra vez.`,approved:'Ainda não aprovou nenhuma promoção.',rejected:'Nenhuma promoção rejeitada.'}[tab];
+  const resto=st.soFolheto.length;
+  return `<div class="ph"><div><h1>Promoções</h1><p>As ${st.limite} melhores da semana para as redes. Todas respeitam a sua margem mínima.</p></div></div>
   ${porConfirmarHTML()}
   <div class="seg full" role="tablist" aria-label="Estado das promoções">${[['pending','Por decidir',st.queue.length],['approved','Aprovadas',apr.length],['rejected','Rejeitadas',rej.length]].map(([k,l,n])=>`<button role="tab" data-act="promo-tab" data-id="${k}" aria-pressed="${tab===k}">${l}<b>${n}</b></button>`).join('')}</div>
-  <section class="card pad">${its.length?its.map(prow).join(''):`<div class="empty">${vazio}</div>`}</section>`;
+  ${tab==='pending'&&its.length?`<p class="xs muted" style="margin:0 4px">Escolhidas por serem as mais baratas face à concorrência e as que deixam mais margem${st.aprovSemana?` · já aprovou ${st.aprovSemana} de ${st.limite} esta semana`:''}. Se rejeitar uma, aparece a seguinte.</p>`:''}
+  <section class="card pad">${its.length?its.map(prow).join(''):`<div class="empty">${vazio}</div>`}</section>
+  ${tab==='pending'&&resto?`<button class="card pad" data-act="tab" data-id="folheto" style="all:unset;box-sizing:border-box;display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:12px;align-items:center;cursor:pointer;background:var(--glass);border:1px solid var(--line);border-radius:var(--r-2xl);padding:16px"><span class="ti" style="width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--green-soft);color:var(--green-deep)">${IC.folheto.replace('<svg','<svg width="20" height="20"')}</span><span><b style="display:block">Mais ${resto} ${resto===1?'produto':'produtos'} com promoção possível</b><small class="muted" style="font-size:.8rem">Não vão para as redes: entram no folheto da semana</small></span><span style="color:var(--subtle)">${IC.right.replace('<svg','<svg width="18" height="18"')}</span></button>`:''}`;
 }
 
 // separador de topo do «Publicar»: publicações nas redes ou folheto
@@ -974,7 +984,7 @@ function vPosts(){
       <label class="small" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px"><span class="muted">Nome nas publicações</span><input type="text" data-nome-post="${esc(x.p.name)}" value="${esc(nomePost(x.p))}" maxlength="40" style="flex:1;min-width:180px;max-width:320px;padding:6px 10px;border:1px solid var(--line,#E2E8F0);border-radius:8px;font:inherit"></label>
       ${datasLegendaHTML(x.p)}</div></details></section>`).join('')}
   ${done.length?`<section class="card pad"><div class="card-h"><h2>Agendadas</h2><span class="xs muted">${networks().join(', ')}</span></div><div class="list">${done.map(x=>`<div class="rrow"><div style="width:44px">${postHTML(x.p,x.pr.choice)}</div><div style="min-width:0"><b>${esc(nomePost(x.p))} · ${eur(x.s.price)}</b><small>${whenTxt(x.pr.sched)} · ${STYLE_NAMES[x.pr.choice]}</small></div><div class="cont"><button class="ib" data-act="copiar-legenda" data-id="${x.p.id}" aria-label="Copiar legenda">${IC.copy||'⧉'}</button><button class="ib" data-act="rechoose" data-id="${x.p.id}" aria-label="Mudar design">${IC.swap}</button></div></div>`).join('')}</div></section>`:''}
-  ${tem('postsSemana')<7?`<p class="xs muted" style="margin:0 4px">Plano ${esc(S.store.plan)}: ${tem('postsSemana')} publicações por semana; as seguintes passam para a semana a seguir. O carrossel e o reels estão no plano Crescer.</p>`:''}
+  <p class="xs muted" style="margin:0 4px">Plano ${esc(S.store.plan)}: ${tem('postsSemana')} promoções por semana nas redes${tem('carrossel')?', mais o carrossel e o reels':''}. Os outros produtos com promoção vão para o folheto.${tem('carrossel')?'':' O carrossel e o reels estão no plano Crescer.'}</p>
   ${tem('carrossel')?vCarousel(st):''}${tem('reel')?vReel(st):''}
   <section class="card pad so-pc"><div class="card-h"><h2>Próximos 7 dias</h2></div>
     <div class="cal">${days.map(d=>{const k=dayKey(d),items=done.filter(x=>x.pr.sched&&x.pr.sched.day===k);return `<div class="day"><span class="d">${dfmt.format(d)}</span>${items.map(x=>`<div class="slot"><b>${x.pr.sched.time} · ${esc(x.p.name)}</b>${eur(x.s.price)} · ${STYLE_NAMES[x.pr.choice]}</div>`).join('')}${extraSlots(k)}</div>`}).join('')}</div></section>`;
