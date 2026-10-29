@@ -492,7 +492,7 @@ Deno.serve(async (req) => {
     preco_unit: l.preco_unit, desconto_pct: l.desconto_pct, iva_pct: l.iva_pct, incerta: !!l.incerta, detalhe: detalhe(l),
     produto_id: (l.ean && mapE.get(l.ean)) || mapA.get(l.descricao.toLowerCase()) || null,
   }));
-  const { data: ins } = await sb.from('linhas_fatura').insert(rows).select('id,ean,descricao,quantidade,custo_unit,produto_id,incerta,detalhe');
+  const { data: ins } = await sb.from('linhas_fatura').insert(rows).select('id,ean,descricao,quantidade,custo_unit,iva_pct,produto_id,incerta,detalhe');
 
   return json({ fatura_id: fat.id, metodo, tokens, cabecalho: cab, linhas: ins, validada_qr: bate(linhas, qr) });
 });
