@@ -21,7 +21,7 @@ const LONGOS = [
     const erros = []; pg.on('pageerror', e => erros.push(e.message));
     await pg.route(/supabase-js/, r => r.fulfill({ body: STUB, contentType: 'application/javascript' }));
     await pg.route(/^https?:\/\/(?!.*supabase-js).*/, r => r.abort());
-    await pg.goto('file://' + path.resolve(__dirname, '../index.html')); await pg.waitForTimeout(400);
+    await pg.goto('file://' + path.resolve(__dirname, '../index.html') + '?admin'); await pg.waitForTimeout(400);
     await pg.evaluate(() => { const b = document.querySelector('[data-act="reset"]'); b && b.click(); });
     await pg.waitForTimeout(300);
     await pg.evaluate(L => { for (const k of Object.keys(localStorage)) { try { const o = JSON.parse(localStorage.getItem(k)); if (o && o.v === 6) {

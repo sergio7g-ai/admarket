@@ -336,6 +336,67 @@ select.edit{width:auto;text-align:left}
 @media (max-width:760px){.reel-wrap{grid-template-columns:minmax(0,1fr)}.phone{margin:0 auto}}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 
+/* ===== harmonização (mobile-first): peças comuns ===== */
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.kpi{padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi b{font:700 1.3rem/1.1 var(--f-head);letter-spacing:-.02em}
+.kpi span{font-size:.74rem;color:var(--muted);line-height:1.25}
+.todo{display:flex;flex-direction:column}
+.todo>button{all:unset;box-sizing:border-box;display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line);cursor:pointer;width:100%}
+.todo>button:first-child{border-top:0;padding-top:2px}
+.todo>button:focus-visible{outline:2px solid var(--blue-2);outline-offset:2px;border-radius:12px}
+.todo .ti{width:40px;height:40px;border-radius:12px;display:grid;place-items:center}
+.todo .ti svg{width:20px;height:20px}
+.todo b{display:block;font-weight:650;line-height:1.3}
+.todo small{display:block;color:var(--muted);font-size:.8rem;line-height:1.3;margin-top:1px}
+.todo .go{color:var(--subtle);display:grid;place-items:center}
+.todo .go svg{width:18px;height:18px}
+.todo .mini{width:40px;height:40px;border-radius:11px}
+.todo .feito{text-align:center;color:var(--muted);padding:10px 0}
+.prow2{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.prow2:first-child{border-top:0;padding-top:0}
+.prow2 .mini{width:44px;height:44px;border-radius:12px}
+.prow2 h3{font-size:.95rem;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.prow2 .nums{font-size:.84rem;color:var(--fg-2);margin-top:3px}
+.prow2 .nums b{font-weight:700;color:var(--fg)}
+.prow2 .note{font-size:.75rem;color:var(--muted);margin-top:2px;line-height:1.3}
+.prow2 .note.warn{color:var(--orange-ink);font-weight:600}
+.prow2 .ac{display:flex;gap:8px;align-items:center}
+.ib{width:42px;height:42px;border-radius:12px;border:1px solid var(--line-2);background:var(--solid);color:var(--fg-2);display:grid;place-items:center;cursor:pointer;flex:none}
+.ib svg{width:18px;height:18px}
+.ib.ok{background:var(--green-deep);border-color:var(--green-deep);color:#fff}
+.linkbtn2{border:0;background:none;color:var(--muted);font-size:.78rem;text-decoration:underline;cursor:pointer;padding:4px}
+.seg.full{display:flex;width:100%;flex-wrap:nowrap}
+.seg.full button{flex:1;padding:8px 6px;font-size:.84rem;white-space:nowrap}
+.seg.full button b{font-weight:700;margin-left:4px}
+.pubseg{margin:-4px 0 2px}
+.carr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.carr .pp{display:flex;flex-direction:column;gap:8px}
+details.mais{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+details.mais>summary{cursor:pointer;color:var(--blue-2);font-size:.86rem;font-weight:600;list-style:none}
+details.mais>summary::before{content:'＋ ';}
+details.mais[open]>summary::before{content:'－ ';}
+details.mais>div{margin-top:12px}
+.frow{display:grid;grid-template-columns:22px 40px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
+.frow:first-child{border-top:0;padding-top:0}
+.frow input[type=checkbox]{width:20px;height:20px;accent-color:var(--blue);margin:0}
+.frow .mini{width:40px;height:40px;border-radius:11px}
+.frow b{font-weight:650;line-height:1.25;display:block}
+.frow small{display:block;color:var(--muted);font-size:.76rem;line-height:1.3}
+.frow .pr{font:700 .98rem var(--f-head);white-space:nowrap}
+.barra{position:sticky;bottom:16px;z-index:6;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 10px 10px 16px;border-radius:16px;background:#0F172A;color:#fff;box-shadow:var(--sh-3)}
+.barra span{font-size:.86rem}
+.barra .btn{border:0}
+.rrow{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.rrow:first-child{border-top:0;padding-top:0}
+.rrow .mini{width:44px;height:44px;border-radius:12px}
+.rrow b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:650;line-height:1.25}
+.rrow small{display:block;color:var(--muted);font-size:.76rem;margin-top:2px}
+.rrow .cont{display:flex;align-items:center;gap:8px}
+.rrow .cont .n{min-width:22px;text-align:center;font:700 1.05rem var(--f-head)}
+p svg,.xs svg,.small svg{width:1em;height:1em;vertical-align:-.12em}
+.so-pc{}
+.so-m{display:none}
 @media (max-width:980px){
   .hero{grid-template-columns:minmax(0,1fr)}
   .decide{position:static}
@@ -353,11 +414,23 @@ select.edit{width:auto;text-align:left}
   .tabbar button svg{width:22px;height:22px}
   .tabbar button[aria-current="page"]{color:var(--blue)}
   .tabbar .dot{position:absolute;top:2px;left:calc(50% + 6px);min-width:16px;height:16px;border-radius:99px;background:var(--orange);color:#fff;font-size:.62rem;display:grid;place-items:center;padding:0 4px}
-  .fab{bottom:calc(var(--tabbar) + 14px + env(safe-area-inset-bottom,0px));height:54px;width:54px;padding:0;justify-content:center;border-radius:18px}
+  .fab{display:none!important}
+  .so-pc{display:none!important}
+  .so-m{display:inline}
+  .carr{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:82%;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 8px;margin:0 -2px;-webkit-overflow-scrolling:touch}
+  .carr>*{scroll-snap-align:center}
+  .barra{bottom:calc(var(--tabbar) + 10px + env(safe-area-inset-bottom,0px))}
+  .kpi{padding:10px 12px}
+  .kpi b{font-size:1.15rem}
+  .tabbar button.add{color:var(--blue)}
+  .tabbar button.add .addc{width:46px;height:46px;border-radius:15px;background:var(--blue);color:#fff;display:grid;place-items:center;margin-top:-16px;box-shadow:0 8px 20px -6px rgba(30,64,175,.55)}
+  .tabbar button.add .addc svg{width:22px;height:22px}
   .fab span{display:none}
   .toast{bottom:calc(var(--tabbar) + 82px + env(safe-area-inset-bottom,0px))}
   main{padding-block:18px calc(var(--tabbar) + 100px)}
-  .metrics{grid-template-columns:minmax(0,1fr);gap:10px}
+  .metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .metrics .metric{flex-direction:column;align-items:flex-start;gap:6px;padding:12px}
+  .metrics .m-ic{display:none}
   .metric{padding:14px 16px}
   .grid2{grid-template-columns:minmax(0,1fr)}
   .posts3{grid-template-columns:minmax(0,1fr)}
@@ -580,6 +653,7 @@ function mini(p){return PHOTOS[p.id]?`<span class="mini photo-mini"><img src="${
 
 /* icons */
 const IC={
+  copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',
   folheto:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5C4.5 4 8 4 12 6c4-2 7.5-2 10-.5V19c-2.5-1.5-6-1.5-10 .5-4-2-7.5-2-10-.5z"/><path d="M12 6v13.5"/></svg>',
   resultados:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
@@ -764,28 +838,33 @@ addEventListener('resize',()=>{clearTimeout(window._rz);window._rz=setTimeout(()
 document.fonts?.ready?.then(()=>render());
 
 /* nav */
-const OWNER_TABS=[['home','Início'],['promos','Promoções'],['posts','Publicações'],['folheto','Folheto'],['resultados','Resultados']];
-const MOBILE_TABS=['home','promos','posts','folheto','resultados'];
-const OWNER_MENU_TABS=['invoices','compare','config','fotos'];
+const OWNER_TABS=[['home','Início'],['promos','Promoções'],['posts','Publicar'],['resultados','Resultados']];
+const MOBILE_TABS=['home','promos','+','posts','resultados'];     // «+» = botão central da fatura
+const OWNER_MENU_TABS=['invoices','compare','config','fotos','folheto'];
+// funções de demonstração/administração só para a equipa admarket (abrir a app com ?admin)
+try{if(/[?#&]admin/.test(location.search+location.hash)){S.admin=true}}catch(e){}
 const ADMIN_TABS=[['stores','Lojas'],['log','Registo']];
 function renderChrome(){
   const st=stats();
   const tabs=S.view==='owner'?OWNER_TABS:ADMIN_TABS;
   if(!tabs.some(t=>t[0]===S.tab)&&!(S.view==='owner'&&OWNER_MENU_TABS.includes(S.tab)))S.tab=tabs[0][0];
   const dot=k=>k==='promos'&&st.pending?`<span class="dot">${st.pending}</span>`:k==='posts'&&st.toDesign?`<span class="dot">${st.toDesign}</span>`:'';
-  document.getElementById('pills').innerHTML=tabs.map(([k,l])=>`<button data-act="tab" data-id="${k}" ${S.tab===k?'aria-current="page"':''}>${l}${dot(k)}</button>`).join('');
+  const ativo=k=>S.tab===k||(k==='posts'&&S.tab==='folheto');
+  document.getElementById('pills').innerHTML=tabs.map(([k,l])=>`<button data-act="tab" data-id="${k}" ${ativo(k)?'aria-current="page"':''}>${l}${dot(k)}</button>`).join('');
   const tb=document.getElementById('tabbar');
-  const mt=S.view==='owner'?MOBILE_TABS.map(k=>OWNER_TABS.find(t=>t[0]===k)):ADMIN_TABS;
+  const mt=S.view==='owner'?MOBILE_TABS.map(k=>k==='+'?['+','Fatura']:OWNER_TABS.find(t=>t[0]===k)):ADMIN_TABS;
   tb.className='tabbar'+(S.view==='admin'?' admin':'');
-  tb.innerHTML=mt.map(([k,l])=>`<button data-act="tab" data-id="${k}" ${S.tab===k?'aria-current="page"':''}>${IC[k]}<span>${l}</span>${dot(k)}</button>`).join('');
+  tb.innerHTML=mt.map(([k,l])=>k==='+'?`<button class="add" data-act="sheet" aria-label="Nova fatura: fotografar ou carregar PDF"><span class="addc">${IC.camera}</span><span>${l}</span></button>`
+    :`<button data-act="tab" data-id="${k}" ${ativo(k)?'aria-current="page"':''}>${IC[k]}<span>${l}</span>${dot(k)}</button>`).join('');
   document.getElementById('fab').hidden=S.view!=='owner';
   {const t=document.getElementById('ai-t');if(t)t.textContent=(typeof PROG!=='undefined'&&PROG)?`A preparar fotos ${PROG.done}/${PROG.total}`:'IA Ativa'}
   document.getElementById('me').innerHTML=`<button class="me-btn" data-act="menu" aria-expanded="${S.menu}" aria-haspopup="true">${S.view==='owner'?avatar(34):`<span class="avatar" style="background:#fff"><img src="${MARK}" alt="" style="object-fit:contain;padding:4px"></span>`}<span class="who"><b>${S.view==='owner'?esc(S.store.name):'Equipa admarket'}</b><span>${S.view==='owner'?'Plano '+esc(S.store.plan):'Painel de gestão'}</span></span></button>
     ${S.menu?`<div class="menu" role="menu">
-      ${S.view==='owner'?`<button role="menuitem" data-act="tab" data-id="invoices">${IC.invoices.replace('<svg','<svg width="18" height="18"')}Faturas${S.tab==='invoices'?'<span class="tick">✓</span>':''}</button>${tem('concorrencia')?'':'<!--'}<button role="menuitem" data-act="tab" data-id="compare">${IC.tag.replace('<svg','<svg width="18" height="18"')}Preços da concorrência${S.tab==='compare'?'<span class="tick">✓</span>':''}</button>${tem('concorrencia')?'':'-->'}<button role="menuitem" data-act="tab" data-id="config"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Configuração da loja${S.tab==='config'?'<span class="tick">✓</span>':''}</button><hr>`:''}
+      ${S.view==='owner'?`<button role="menuitem" data-act="tab" data-id="invoices">${IC.invoices.replace('<svg','<svg width="18" height="18"')}Faturas${S.tab==='invoices'?'<span class="tick">✓</span>':''}</button>${tem('concorrencia')?'':'<!--'}<button role="menuitem" data-act="tab" data-id="compare">${IC.tag.replace('<svg','<svg width="18" height="18"')}Preços da concorrência${S.tab==='compare'?'<span class="tick">✓</span>':''}</button>${tem('concorrencia')?'':'-->'}<button role="menuitem" data-act="tab" data-id="config"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Configuração da loja${S.tab==='config'?'<span class="tick">✓</span>':''}</button>${S.admin?'<hr>':''}`:''}
+      ${S.admin||S.view==='admin'?`<span class="label" style="display:block;padding:6px 12px 2px">Equipa admarket</span>
       <button role="menuitem" data-act="view" data-id="owner">${IC.config.replace('<svg','<svg width="18" height="18"')}Vista da loja${S.view==='owner'?'<span class="tick">✓</span>':''}</button>
       <button role="menuitem" data-act="view" data-id="admin">${IC.stores.replace('<svg','<svg width="18" height="18"')}Painel admarket${S.view==='admin'?'<span class="tick">✓</span>':''}</button>
-      <hr><button role="menuitem" data-act="modo-teste">${IC.reset.replace('<svg','<svg width="18" height="18"')}Modo teste (app vazia)</button><button role="menuitem" data-act="reset">${IC.reset.replace('<svg','<svg width="18" height="18"')}Repor demonstração</button></div>`:''}`;
+      <hr><button role="menuitem" data-act="modo-teste">${IC.reset.replace('<svg','<svg width="18" height="18"')}Modo teste (app vazia)</button><button role="menuitem" data-act="reset">${IC.reset.replace('<svg','<svg width="18" height="18"')}Repor demonstração</button>`:''}</div>`:''}`;
   document.getElementById('layer').innerHTML=S.zoom?zoomHTML():S.sheet?`<div class="scrim" data-act="close"></div><div class="sheet" role="dialog" aria-label="Nova fatura">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:2px 4px 6px"><h2>Nova fatura</h2><button class="icon-btn" data-act="close" aria-label="Fechar">✕</button></div>
       <label class="opt" for="inv-photo"><span class="oi" style="background:var(--blue-soft);color:var(--blue-2)">${IC.camera}</span><span><b>Fotografar fatura</b><span>Abre a câmara do telemóvel</span></span></label>
@@ -796,59 +875,28 @@ function renderChrome(){
 
 /* ---------- views ---------- */
 function vHome(){
-  const st=stats(),q=st.queue;
-  if(S.feat>=q.length)S.feat=Math.max(0,q.length-1);
-  const metrics=`<section class="metrics" aria-label="Métricas rápidas">
-    <div class="card metric"><span class="m-ic" style="background:var(--orange-soft);color:var(--orange)">${IC.tag}</span><div class="m-body"><span class="small muted">Promoções pendentes</span><span class="m-val num">${st.pending}${st.pending?'<span class="m-badge">Novas</span>':''}</span></div></div>
-    <div class="card metric"><span class="m-ic" style="background:var(--green-soft);color:var(--green-deep)">${IC.trend}</span><div class="m-body"><span class="small muted">Margem média</span><span class="m-val num" style="color:var(--green-ink)">${st.appr.length?pct(st.avg):'—'}</span></div></div>
-    <div class="card metric"><span class="m-ic" style="background:var(--blue-soft);color:var(--blue-2)">${IC.cal}</span><div class="m-body"><span class="small muted">Publicações agendadas</span><span class="m-val num">${st.scheduled.length+(S.carousel?1:0)+(S.reel?1:0)} <span class="xs muted" style="font-family:var(--f-ui);font-weight:500;letter-spacing:0">próximos 7 dias</span></span></div></div>
-  </section>`;
-  let hero;
-  if(!q.length){
-    hero=`<section class="card pad" style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px 20px"><span class="m-ic" style="background:var(--green-soft);color:var(--green-deep);width:56px;height:56px;border-radius:16px">${IC.check}</span><h2>Está tudo decidido</h2><p class="muted" style="max-width:44ch">Não há sugestões pendentes. Carregue uma fatura nova para a IA encontrar mais promoções.</p><button class="btn primary" data-act="sheet">Carregar fatura</button></section>`;
-  }else{
-    const x=q[S.feat],p=x.p,s=x.s,pick=S.pick[p.id]??0,slot=nextSlot();
-    const cp=compEf(p),comps=Object.keys(COMP).map(k=>({n:COMP[k],v:cp[k]}));
-    const max=Math.max(...comps.map(c=>c.v||0),s.price);
-    hero=`<section class="hero">
-      <article class="card sug">
-        <div class="sug-top"><span class="chip c-blue">${IC.spark}Sugestão da IA · ${p.cat}</span>
-          <div class="stepper"><span class="xs muted num" style="margin-right:6px">${S.feat+1} de ${q.length}</span><button class="icon-btn" data-act="prev" aria-label="Sugestão anterior" ${S.feat===0?'disabled':''}>${IC.left}</button><button class="icon-btn" data-act="next" aria-label="Sugestão seguinte" ${S.feat>=q.length-1?'disabled':''}>${IC.right}</button></div></div>
-        <div class="shot" style="background:${BG[p.cat]}"><span class="floor"></span>${PHOTOS[p.id]?`<span class="photo-card">${art(p)}</span><span class="credit">Foto sem fundo · biblioteca admarket</span>`:art(p)}
-          <span class="glass-tag tl"><span class="shield">${IC.shield}</span>Margem garantida ${S.margins[p.cat]}%</span>
-          ${s.basico?'':s.beats?`<span class="glass-tag br"><span class="xs muted">Abaixo do ${lowComp(p).name}</span><b class="num">−${eur(r2(s.low-s.price))}</b></span>`:`<span class="glass-tag br"><span class="xs muted">Concorrência</span><b class="num" style="color:var(--orange-ink)">mais barata</b></span>`}</div>
-        <div class="sug-body">
-          <div><h1 style="font-size:1.4rem">${esc(p.name)}</h1><span class="muted small">${esc(p.size)} · fatura ${esc(p.inv)}</span></div>
-          <div class="prices">
-            <div class="pv cost"><span class="label">Preço de custo</span><b class="num">${eur(p.cost)}</b></div>
-            <div class="pv new"><span class="label">Preço sugerido</span><b class="num">${eur(s.price)}</b></div>
-            <div class="pv mg"><span class="label">Margem real</span><b class="num">${pct(s.margin)}</b></div>
-          </div>
-          ${s.basico?`<p class="why">Preço calculado para manter os ${S.margins[p.cat]}% de margem definidos para ${p.cat.toLowerCase()}. <span class="muted">No plano Crescer, a app compara com as grandes cadeias e sugere o preço para ficar abaixo delas.</span></p>`:`<div class="comp" aria-label="Comparação com a concorrência">
-            ${comps.map(c=>`<div class="bar"><span class="muted">${c.n}</span><span class="track"><span class="fill" style="width:${(c.v||0)/max*100}%;display:block"></span></span><b class="num${c.v==null?' muted':''}">${c.v==null?'—':eur(c.v)}</b></div>`).join('')}
-            <div class="bar ours"><span>Sugerido</span><span class="track"><span class="fill" style="width:${s.price/max*100}%;display:block"></span></span><b class="num">${eur(s.price)}</b></div>
-          </div>
-          <p class="why">${s.beats?`Com preços reais de hoje, a IA escolheu ${eur(s.price)} para ficar abaixo das grandes superfícies sem descer dos ${S.margins[p.cat]}% de margem definidos para ${p.cat.toLowerCase()}.`:`Para manter ${S.margins[p.cat]}% de margem não é possível bater o ${lowComp(p).name} (${eur(s.low)}). Pode aprovar na mesma ou passar à seguinte.`}</p>`}
-        </div>
-      </article>
-      <aside class="card decide" aria-label="Decisão">
-        <div><h2>Escolha o post</h2><p class="small muted" style="margin-top:2px">Gerados com as cores e o logótipo da loja</p></div>
-        <div class="thumbs">${[0,1,2].map(i=>`<div class="tw2"><button class="thumb" data-act="pick" data-id="${p.id}" data-idx="${i}" aria-pressed="${pick===i}" aria-label="Design ${STYLE_NAMES[i]}"><span class="frame">${postHTML(p,i)}</span><span class="check">${IC.check}</span><span class="cap">${STYLE_NAMES[i]}</span></button><button class="zoom" data-act="zoom" data-id="${p.id}" data-idx="${i}" aria-label="Ver o design ${STYLE_NAMES[i]} em grande">${IC.zoom}</button></div>`).join('')}</div>
-        <div class="when">${IC.cal}<div><b>${dlong.format(new Date(slot.at))} · ${slot.time}</b><span>Melhor horário · ${networks().join(', ')||'sem redes configuradas'}</span></div></div>
-        <button class="cta" data-act="approve-feat" data-id="${p.id}">${IC.check}Aprovar promoção</button>
-        <button class="textlink" data-act="reject" data-id="${p.id}">Rejeitar sugestão</button>
-      </aside>
-    </section>`;
-  }
-  const active=st.scheduled.slice().sort((a,b)=>a.pr.sched.at.localeCompare(b.pr.sched.at));
-  const lower=`<section>
-    <div class="card pad"><div class="card-h"><h2>Agenda</h2><button class="btn sm" data-act="tab" data-id="posts">Calendário</button></div>
-      ${active.length?`<div class="list">${active.map(x=>`<div class="item"><div style="width:44px;flex:none">${postHTML(x.p,x.pr.choice)}</div><div class="grow"><b>${esc(x.p.name)}</b><div class="xs muted">${STYLE_NAMES[x.pr.choice]} · ${networks().join(', ')}</div></div><span class="chip c-blue num">${whenTxt(x.pr.sched)}</span></div>`).join('')}</div>`:`<div class="empty">Nada agendado.</div>`}
-      ${st.toDesign?`<div class="item" style="margin-top:4px"><div class="grow small"><b>${st.toDesign}</b> aprovada à espera de design</div><button class="btn sm primary" data-act="tab" data-id="posts">Escolher</button></div>`:''}
-    </div>
-  </section>`;
-  return `<div class="ph"><div><span class="label">${dlong.format(new Date())}</span><h1>Olá, ${esc(S.store.name)}</h1></div></div>${metrics}${hero}${folhetoCardHTML()}${lower}
-    <p class="foot-note">Demonstração · preços de concorrência reais (21 out 2026), custos de exemplo · fotos sem fundo da biblioteca admarket (Drive) · <button data-act="reset">repor</button></p>`;
+  // Início = o que há para fazer hoje: uma linha por tarefa, cada uma leva ao sítio certo
+  const st=stats(),r=resultados(),porConf=(S.porConfirmar||[]).length,agend=st.scheduled.slice().sort((a,b)=>a.pr.sched.at.localeCompare(b.pr.sched.at));
+  const F=S.folheto||{},temFolheto=!!(F.gerado||F.geradoOk);
+  const ICO=(ic,bg,fg)=>`<span class="ti" style="background:${bg};color:${fg}">${ic}</span>`,seta=`<span class="go">${IC.right}</span>`;
+  const tarefas=[];
+  if(!S.products.length)tarefas.push(`<button data-act="sheet">${ICO(IC.camera,'var(--blue-soft)','var(--blue-2)')}<span><b>Carregar a primeira fatura</b><small>Fotografe ou carregue o PDF de um fornecedor</small></span>${seta}</button>`);
+  if(porConf)tarefas.push(`<button data-act="tab" data-id="promos">${ICO(IC.invoices,'var(--blue-soft)','var(--blue-2)')}<span><b>Confirmar ${porConf} ${porConf===1?'produto':'produtos'} da última fatura</b><small>Um toque na foto certa e fica aprendido</small></span>${seta}</button>`);
+  if(st.pending)tarefas.push(`<button data-act="tab" data-id="promos">${ICO(IC.tag,'var(--orange-soft)','var(--orange)')}<span><b>Aprovar ${st.pending} ${st.pending===1?'promoção':'promoções'}</b><small>Todas respeitam a sua margem mínima</small></span>${seta}</button>`);
+  if(st.toDesign)tarefas.push(`<button data-act="tab" data-id="posts">${ICO(IC.posts,'var(--blue-soft)','var(--blue-2)')}<span><b>Escolher o design de ${st.toDesign} ${st.toDesign===1?'publicação':'publicações'}</b><small>3 designs prontos com a marca da loja</small></span>${seta}</button>`);
+  if(st.appr.length&&!temFolheto)tarefas.push(`<button data-act="tab" data-id="folheto">${ICO(IC.folheto,'var(--green-soft)','var(--green-deep)')}<span><b>Fazer o folheto da semana</b><small>Escolha os produtos e as datas; o folheto faz-se sozinho</small></span>${seta}</button>`);
+  if(st.appr.length)tarefas.push(`<button data-act="tab" data-id="resultados">${ICO(IC.resultados,'var(--green-soft)','var(--green-deep)')}<span><b>Registar clientes na caixa</b><small>+1 por cada cliente que mostrar a publicação</small></span>${seta}</button>`);
+  const kpis=`<section class="kpis" aria-label="Resumo">
+    <div class="card kpi"><span>Margem média</span><b class="num" style="color:var(--green-ink)">${st.appr.length?pct(st.avg):'—'}</b></div>
+    <div class="card kpi"><span>Agendadas</span><b class="num">${agend.length+(S.carousel?1:0)+(S.reel?1:0)}</b></div>
+    <div class="card kpi"><span>Clientes este mês</span><b class="num">${r.tot.n}</b></div></section>`;
+  const prox=agend.length?`<section class="card pad"><div class="card-h"><h2>Próximas publicações</h2><button class="btn sm" data-act="tab" data-id="posts">Ver todas</button></div>
+    <div class="todo">${agend.slice(0,3).map(x=>`<button data-act="tab" data-id="posts">${mini(x.p)}<span><b>${esc(nomePost(x.p))} · ${eur(x.s.price)}</b><small>${whenTxt(x.pr.sched)}</small></span>${seta}</button>`).join('')}</div></section>`:'';
+  return `<div class="ph"><div><span class="label">${dlong.format(new Date())}</span><h1>Olá, ${esc(S.store.name)}</h1></div></div>${kpis}
+    <section class="card pad"><div class="card-h"><h2>Para fazer</h2>${tarefas.length?`<span class="chip c-orange">${tarefas.length}</span>`:''}</div>
+      <div class="todo">${tarefas.length?tarefas.join(''):`<p class="feito">${IC.check} Está tudo feito por agora. Quando chegar uma fatura nova, aparecem mais promoções.</p>`}</div></section>
+    ${prox}
+    ${S.admin?`<p class="foot-note">Demonstração · <button data-act="reset">repor</button></p>`:''}`;
 }
 
 function vInvoices(){
@@ -856,8 +904,8 @@ function vInvoices(){
   if(pe&&pe.stage==='photos'){top=photoStageHTML()}
   else if(!pe){
     top=`<div class="drop" id="drop"><span class="big-ic">${IC.camera}</span><h2>Nova fatura de fornecedor</h2>
-      <p class="muted small" style="max-width:48ch">Fotografe a fatura ou carregue o PDF. A IA lê os produtos e os preços de custo; o senhor só confirma.</p>
-      <div class="opts"><label class="btn primary" for="inv-photo">Fotografar</label><label class="btn" for="inv-pdf">Carregar PDF</label><button class="btn" data-act="sample">Ver demonstração</button></div>
+      <p class="muted small" style="max-width:48ch">Fotografe a fatura ou carregue o PDF. A app lê os produtos e os custos; só tem de confirmar.</p>
+      <div class="opts"><label class="btn primary" for="inv-photo">Fotografar</label><label class="btn" for="inv-pdf">Carregar PDF</label>${S.admin?'<button class="btn" data-act="sample">Ver demonstração</button>':''}</div>
       <span class="xs muted">Dica: fatura inteira na foto, direita e com boa luz. Ou arraste o ficheiro para aqui</span>${realBoxHTML()}</div>`;
   }else if(pe.stage==='real-review'){top=realReviewHTML(pe)
   }else if(pe.stage==='reading'){
@@ -870,9 +918,9 @@ function vInvoices(){
       <div class="acts" style="margin-top:16px"><button class="btn" data-act="cancel-inv">Cancelar</button><button class="btn green" data-act="confirm-inv">Confirmar e guardar</button></div>
       <p class="xs muted" style="margin-top:12px">Exemplo de demonstração. Para ler as suas faturas a sério, entre com o seu email no quadro Nova fatura.</p></div>`;
   }
-  return `<div class="ph"><div><h1>Faturas</h1><p>Cada fatura atualiza os preços de custo, a base de todas as sugestões.</p></div></div>${top}
-  ${realListHTML()}<section class="card pad"><div class="card-h"><h2>${REAL.user?'Exemplo de demonstração':'Guardadas'}</h2><span class="xs muted">${S.products.length} produtos com custo</span></div>
-    <div class="list">${S.invoices.map(v=>`<div class="item"><span class="doc" style="width:40px;height:50px;font-size:.62rem">${v.kind}</span><div class="grow"><b>${esc(v.supplier)}</b><div class="xs muted">${v.id} · ${v.date}</div></div><span class="chip c-grey">${v.lines} ${v.lines===1?'produto':'produtos'}</span></div>`).join('')}</div></section>`;
+  return `<div class="ph"><div><h1>Faturas</h1><p>Os custos de cada fatura são a base de todas as promoções.</p></div></div>${top}
+  ${realListHTML()}${S.admin||!REAL.user?`<section class="card pad"><div class="card-h"><h2>${REAL.user?'Exemplo de demonstração':'Guardadas'}</h2><span class="xs muted">${S.products.length} produtos com custo</span></div>
+    <div class="list">${S.invoices.map(v=>`<div class="item"><span class="doc" style="width:40px;height:50px;font-size:.62rem">${v.kind}</span><div class="grow"><b>${esc(v.supplier)}</b><div class="xs muted">${v.id} · ${v.date}</div></div><span class="chip c-grey">${v.lines} ${v.lines===1?'produto':'produtos'}</span></div>`).join('')}</div></section>`:''}`;
 }
 
 function vCompare(){
@@ -884,38 +932,52 @@ function vCompare(){
     <td class="num">${eur(s.min)}<span class="sub">${S.margins[p.cat]}% margem</span></td>
     <td class="num"><b>${eur(s.price)}</b><span class="sub" style="color:${s.beats?'var(--green-ink)':'var(--orange-ink)'}">${s.beats?pct(s.margin)+' margem':'acima da concorrência'}</span></td></tr>`}).join('')}
   </tbody></table></div></section>
+  ${folhetoCardHTML()}
   <p class="xs muted">A verde, o mais barato das três cadeias. «site»: preço visto nos sites nos últimos 3 dias (cada produto é pesquisado de 2 em 2 dias). «folheto»: promoção do folheto em vigor, quando é mais barata. Sem marca, é o último preço conhecido.</p>`;
 }
 
 function prow(x){
+  // uma linha por produto: foto, nome, custo → promoção e margem, e as ações à direita
   const {p,s,pr}=x;
-  const chip=pr.status==='approved'?`<span class="chip c-green">Aprovada ${timeAgo(pr.at)}</span>`:pr.status==='rejected'?`<span class="chip c-red">Rejeitada</span>`:s.maisCaro?`<span class="chip c-grey">Não recomendada</span>`:s.beats||s.basico?`<span class="chip c-orange">Nova</span>`:`<span class="chip c-grey">Não recomendada</span>`;
-  const acts=pr.status==='pending'?`<button class="btn sm" data-act="reject" data-id="${p.id}">Rejeitar</button><button class="btn sm green" data-act="approve" data-id="${p.id}">Aprovar</button>`:`<button class="btn sm" data-act="undo" data-id="${p.id}">Anular</button>${pr.status==='approved'&&pr.choice==null?`<button class="btn sm primary" data-act="tab" data-id="posts">Escolher design</button>`:''}`;
-  return `<div class="prow">${mini(p)}<div style="min-width:0"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><h3>${esc(p.name)}</h3><span class="xs muted">${esc(p.size)}</span>${chip}</div>
-    <p class="xs muted" style="margin-top:3px">${s.basico?(s.maisCaro?`<span style="color:var(--orange-ink);font-weight:600">Aviso só para si: está mais barato nas grandes cadeias. Não aconselhamos esta promoção.</span>`:`Margem de ${S.margins[p.cat]}% garantida`):s.beats?`${eur(r2(s.low-s.price))} abaixo do ${lowComp(p).name}`:`Teria de custar ${eur(s.price)} para manter ${S.margins[p.cat]}%`}</p></div>
-    <div class="trio-wrap"><div class="trio"><div><span class="label">Custo</span><b class="num muted">${eur(p.cost)}</b></div><div><span class="label">Promo</span><b class="num">${eur(s.price)}</b></div><div><span class="label">Margem</span><b class="num" style="color:var(--green-ink)">${pct(s.margin)}</b></div></div></div>
-    <div class="acts">${acts}</div></div>`;
+  const nota=s.basico?(s.maisCaro?`<p class="note warn">Aviso só para si: está mais barato nas grandes cadeias.</p>`:'')
+    :s.beats?`<p class="note">${eur(r2(s.low-s.price))} abaixo do ${lowComp(p).name}</p>`:`<p class="note warn">Para manter ${S.margins[p.cat]}% não fica abaixo da concorrência</p>`;
+  const ac=pr.status==='pending'?`<button class="ib" data-act="reject" data-id="${p.id}" aria-label="Rejeitar ${esc(p.name)}">✕</button><button class="ib ok" data-act="approve" data-id="${p.id}" aria-label="Aprovar ${esc(p.name)}">${IC.check}</button>`
+    :pr.status==='approved'?(pr.choice==null?`<button class="btn sm primary" data-act="tab" data-id="posts">Design</button>`:`<span class="chip c-blue">Agendada</span>`)
+    :`<span class="chip c-red">Rejeitada</span>`;
+  return `<div class="prow2">${mini(p)}<div style="min-width:0"><h3>${esc(p.name)} <span class="xs muted" style="font-weight:500">${esc(p.size||'')}</span></h3>
+    <p class="nums">Custo ${eur(p.cost)} → <b>${eur(s.price)}</b> · margem <b style="color:var(--green-ink)">${pct(s.margin)}</b></p>${nota}
+    ${pr.status!=='pending'?`<button class="linkbtn2" data-act="undo" data-id="${p.id}">Anular decisão</button>`:''}</div>
+    <div class="ac">${ac}</div></div>`;
 }
 function vPromos(){
-  const st=stats();
-  const groups=[['pending','Por decidir',st.queue],['approved','Aprovadas',st.all.filter(x=>x.pr.status==='approved')],['rejected','Rejeitadas',st.all.filter(x=>x.pr.status==='rejected')]];
-  return `<div class="ph"><div><h1>Promoções</h1><p>Cada sugestão respeita a margem mínima da categoria. Nada é publicado sem aprovação, e cada decisão fica registada.</p></div><span class="chip c-orange">${st.pending} por decidir</span></div>
-  ${porConfirmarHTML()}${groups.map(([k,l,items])=>items.length?`<section class="card pad"><div class="card-h"><h2>${l}</h2><span class="xs muted">${items.length}</span></div>${items.map(prow).join('')}</section>`:'').join('')}`;
+  const st=stats(),apr=st.all.filter(x=>x.pr.status==='approved'),rej=st.all.filter(x=>x.pr.status==='rejected');
+  const grupos={pending:st.queue,approved:apr,rejected:rej};
+  let tab=S.promoTab||'pending';if(!grupos[tab].length&&tab!=='pending'&&!st.queue.length)tab=apr.length?'approved':'pending';
+  const its=grupos[tab],vazio={pending:'Não há promoções por decidir. Carregue uma fatura nova para ver mais.',approved:'Ainda não aprovou nenhuma promoção.',rejected:'Nenhuma promoção rejeitada.'}[tab];
+  return `<div class="ph"><div><h1>Promoções</h1><p>Aprove as da semana. Todas respeitam a sua margem mínima.</p></div></div>
+  ${porConfirmarHTML()}
+  <div class="seg full" role="tablist" aria-label="Estado das promoções">${[['pending','Por decidir',st.queue.length],['approved','Aprovadas',apr.length],['rejected','Rejeitadas',rej.length]].map(([k,l,n])=>`<button role="tab" data-act="promo-tab" data-id="${k}" aria-pressed="${tab===k}">${l}<b>${n}</b></button>`).join('')}</div>
+  <section class="card pad">${its.length?its.map(prow).join(''):`<div class="empty">${vazio}</div>`}</section>`;
 }
 
+// separador de topo do «Publicar»: publicações nas redes ou folheto
+function pubSeg(){return `<div class="seg full pubseg" role="tablist" aria-label="Publicar">${[['posts','Publicações'],['folheto','Folheto']].map(([k,l])=>`<button role="tab" data-act="tab" data-id="${k}" aria-pressed="${S.tab===k}">${l}</button>`).join('')}</div>`}
 function vPosts(){
   const st=stats(),todo=st.appr.filter(x=>x.pr.choice==null),done=st.appr.filter(x=>x.pr.choice!=null);
   const days=[...Array(7)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()+i+1);return d});
-  return `<div class="ph"><div><h1>Publicações</h1><p>${tem('carrossel')?'Três designs por promoção aprovada, o carrossel com as promoções da semana e um reels do produto com a melhor promoção. Tudo agendado para o melhor horário.':'Três designs por promoção aprovada, agendados para o melhor horário.'}</p></div></div>
-  ${todo.map(x=>`<section class="card pad"><div class="card-h"><div><span class="label">Escolher design</span><h2>${esc(x.p.name)} a ${eur(x.s.price)}</h2></div><span class="xs muted">${networks().join(', ')}</span></div>
-    <label class="small" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-4px 0 12px"><span class="muted">Nome nas publicações</span><input type="text" data-nome-post="${esc(x.p.name)}" value="${esc(nomePost(x.p))}" maxlength="40" style="flex:1;min-width:180px;max-width:320px;padding:6px 10px;border:1px solid var(--line,#E2E8F0);border-radius:8px;font:inherit"></label>
-    ${datasLegendaHTML(x.p)}
-    <div class="posts3">${[0,1,2].map(i=>`<div class="pp">${postHTML(x.p,i)}<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="small"><b>${STYLE_NAMES[i]}</b></span><button class="btn sm primary" data-act="choose" data-id="${x.p.id}" data-idx="${i}">Escolher</button></div></div>`).join('')}</div></section>`).join('')}
-  ${tem('postsSemana')<7?`<section class="card pad"><p class="small"><b>Plano ${esc(S.store.plan)}:</b> ${tem('postsSemana')} publicações por semana. As seguintes ficam agendadas para a semana a seguir. <span class="muted">O carrossel, o reels e as publicações diárias estão no plano Crescer.</span></p></section>`:''}
+  return `<div class="ph"><div><h1>Publicar</h1><p>Escolha um dos 3 designs de cada promoção. A app agenda para a melhor hora.</p></div></div>
+  ${pubSeg()}
+  ${!todo.length&&!done.length?`<section class="card pad"><div class="empty">Aprove uma promoção em Promoções e os designs aparecem aqui.</div></section>`:''}
+  ${todo.map(x=>`<section class="card pad"><div class="card-h" style="margin-bottom:10px"><div style="min-width:0"><span class="label">Escolher design<span class="so-m"> · deslize para ver os 3</span></span><h2>${esc(nomePost(x.p))} a ${eur(x.s.price)}</h2></div></div>
+    <div class="carr">${[0,1,2].map(i=>`<div class="pp">${postHTML(x.p,i)}<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="small"><b>${STYLE_NAMES[i]}</b></span><button class="btn sm primary" data-act="choose" data-id="${x.p.id}" data-idx="${i}">Escolher</button></div></div>`).join('')}</div>
+    <details class="mais"><summary>Editar nome, datas e legenda</summary><div>
+      <label class="small" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px"><span class="muted">Nome nas publicações</span><input type="text" data-nome-post="${esc(x.p.name)}" value="${esc(nomePost(x.p))}" maxlength="40" style="flex:1;min-width:180px;max-width:320px;padding:6px 10px;border:1px solid var(--line,#E2E8F0);border-radius:8px;font:inherit"></label>
+      ${datasLegendaHTML(x.p)}</div></details></section>`).join('')}
+  ${done.length?`<section class="card pad"><div class="card-h"><h2>Agendadas</h2><span class="xs muted">${networks().join(', ')}</span></div><div class="list">${done.map(x=>`<div class="rrow"><div style="width:44px">${postHTML(x.p,x.pr.choice)}</div><div style="min-width:0"><b>${esc(nomePost(x.p))} · ${eur(x.s.price)}</b><small>${whenTxt(x.pr.sched)} · ${STYLE_NAMES[x.pr.choice]}</small></div><div class="cont"><button class="ib" data-act="copiar-legenda" data-id="${x.p.id}" aria-label="Copiar legenda">${IC.copy||'⧉'}</button><button class="ib" data-act="rechoose" data-id="${x.p.id}" aria-label="Mudar design">${IC.swap}</button></div></div>`).join('')}</div></section>`:''}
+  ${tem('postsSemana')<7?`<p class="xs muted" style="margin:0 4px">Plano ${esc(S.store.plan)}: ${tem('postsSemana')} publicações por semana; as seguintes passam para a semana a seguir. O carrossel e o reels estão no plano Crescer.</p>`:''}
   ${tem('carrossel')?vCarousel(st):''}${tem('reel')?vReel(st):''}
-  <section class="card pad"><div class="card-h"><h2>Próximos 7 dias</h2><span class="xs muted">Horários sugeridos (simulação; na fase 2 vêm do Metricool)</span></div>
-    <div class="cal">${days.map(d=>{const k=dayKey(d),items=done.filter(x=>x.pr.sched&&x.pr.sched.day===k);return `<div class="day"><span class="d">${dfmt.format(d)}</span>${items.map(x=>`<div class="slot"><b>${x.pr.sched.time} · ${esc(x.p.name)}</b>${eur(x.s.price)} · ${STYLE_NAMES[x.pr.choice]}</div>`).join('')}${extraSlots(k)}</div>`}).join('')}</div></section>
-  ${done.length?`<section class="card pad"><div class="card-h"><h2>Agendadas</h2></div><div class="list">${done.map(x=>`<div class="item"><div style="width:64px;flex:none">${postHTML(x.p,x.pr.choice)}</div><div class="grow"><b>${esc(x.p.name)} a ${eur(x.s.price)}</b><div class="xs muted">${STYLE_NAMES[x.pr.choice]} · válido de ${periodo(x.p).txt}</div></div><span class="chip c-blue num">${whenTxt(x.pr.sched)}</span><button class="btn sm" data-act="copiar-legenda" data-id="${x.p.id}">Legenda</button><button class="btn sm" data-act="rechoose" data-id="${x.p.id}">${IC.swap.replace('<svg','<svg width="15" height="15"')}Mudar</button></div>`).join('')}</div></section>`:''}`;
+  <section class="card pad so-pc"><div class="card-h"><h2>Próximos 7 dias</h2></div>
+    <div class="cal">${days.map(d=>{const k=dayKey(d),items=done.filter(x=>x.pr.sched&&x.pr.sched.day===k);return `<div class="day"><span class="d">${dfmt.format(d)}</span>${items.map(x=>`<div class="slot"><b>${x.pr.sched.time} · ${esc(x.p.name)}</b>${eur(x.s.price)} · ${STYLE_NAMES[x.pr.choice]}</div>`).join('')}${extraSlots(k)}</div>`}).join('')}</div></section>`;
 }
 
 /* ===== Resultados: prova de que as promoções trazem clientes ===== */
@@ -934,18 +996,17 @@ function vResultados(){
   const mesN=new Intl.DateTimeFormat('pt-PT',{month:'long',year:'numeric'}).format(new Date());
   const veredito=t.lucro>=r.plano&&r.plano?`<b style="color:var(--green-ink)">O admarket já se pagou ${pago.toLocaleString('pt-PT',{maximumFractionDigits:1})} vezes este mês.</b>`
     :`Faltam cerca de <b>${falta}</b> clientes com cupão para pagar o plano ${esc(S.store.plan==='Mês grátis'?'Essencial':S.store.plan)} (${eur(r.plano)}/mês).`;
-  return `<div class="ph"><div><h1>Resultados</h1><p>Cada publicação diz «mostre esta publicação na caixa». Quando um cliente mostrar o telemóvel com a publicação (ou um print), carregue em <b>+1</b>. No fim do mês vê quanto as promoções venderam e se o admarket se pagou.</p></div><button class="btn" data-act="relatorio">Relatório de ${esc(mesN)}</button></div>
-  <section class="card pad"><div class="card-h"><h2>Registo na caixa</h2><span class="xs muted">Um toque por cliente que mostrar a publicação</span></div>
-    ${r.linhas.length?`<div class="list">${r.linhas.map(l=>`<div class="item"><div class="prod" style="flex:1;min-width:0">${mini(l.p)}<div><b>${esc(l.p.name)}</b><span class="sub" style="display:block">Válido de ${periodo(l.p).txt} · ${eur(l.s.price)} · hoje ${l.hoje} · mês ${l.n}</span></div></div>
-      <button class="btn sm" data-act="uso-menos" data-id="${l.p.id}" aria-label="Retirar um registo de ${esc(l.p.name)}" ${l.hoje?'':'disabled'}>−1</button><button class="btn green" data-act="uso-mais" data-id="${l.p.id}" aria-label="Registar um cliente para ${esc(l.p.name)}">+1</button></div>`).join('')}</div>`
+  return `<div class="ph"><div><h1>Resultados</h1><p>Carregue em +1 sempre que um cliente mostrar a publicação na caixa.</p></div></div>
+  <section class="kpis" aria-label="Resultados do mês">
+    <div class="card kpi"><span>Clientes este mês</span><b class="num">${t.n}</b></div>
+    <div class="card kpi"><span>Vendas trazidas</span><b class="num">${eur(t.vendas)}</b></div>
+    <div class="card kpi"><span>Lucro gerado</span><b class="num" style="color:var(--green-ink)">${eur(t.lucro)}</b></div></section>
+  <section class="card pad"><div class="card-h"><h2>Registo na caixa</h2><span class="xs muted">hoje / mês</span></div>
+    ${r.linhas.length?`<div class="list">${r.linhas.map(l=>`<div class="rrow">${mini(l.p)}<div style="min-width:0"><b>${esc(nomePost(l.p))}</b><small>${eur(l.s.price)} · ${periodo(l.p).txt} · mês ${l.n}</small></div>
+      <div class="cont"><button class="ib" data-act="uso-menos" data-id="${l.p.id}" aria-label="Retirar um registo de ${esc(l.p.name)}" ${l.hoje?'':'disabled'}>−</button><span class="n num">${l.hoje}</span><button class="ib ok" data-act="uso-mais" data-id="${l.p.id}" aria-label="Registar um cliente para ${esc(l.p.name)}">+1</button></div></div>`).join('')}</div>`
     :'<p class="small muted">Ainda não há promoções aprovadas. Aprove uma em Promoções e ela aparece aqui.</p>'}
   </section>
-  <section class="metrics" aria-label="Resultados do mês">
-    <div class="card metric"><span class="m-ic" style="background:var(--blue-soft);color:var(--blue-2)">${IC.tag}</span><div class="m-body"><span class="small muted">Clientes com cupão (mês)</span><span class="m-val num">${t.n}</span></div></div>
-    <div class="card metric"><span class="m-ic" style="background:var(--orange-soft);color:var(--orange)">${IC.cal}</span><div class="m-body"><span class="small muted">Vendas trazidas (estimativa)</span><span class="m-val num">${eur(t.vendas)}</span></div></div>
-    <div class="card metric"><span class="m-ic" style="background:var(--green-soft);color:var(--green-deep)">${IC.trend}</span><div class="m-body"><span class="small muted">Lucro gerado</span><span class="m-val num" style="color:var(--green-ink)">${eur(t.lucro)}</span></div></div>
-  </section>
-  <section class="card pad"><p class="small" style="margin:0">${veredito}</p><p class="xs muted" style="margin:8px 0 0">Conta com um cesto médio de <input class="edit num" type="number" min="1" step="0.5" value="${r.cesto}" data-cfg="cesto" aria-label="Cesto médio em euros" style="width:5.5em"> € e a margem média da loja (${Math.round(r.mg*100)} %): cerca de ${eur(r.porCliente)} de lucro por cliente.</p></section>`;
+  <section class="card pad"><p class="small" style="margin:0">${veredito}</p><p class="xs muted" style="margin:8px 0 0">Conta com um cesto médio de <input class="edit num" type="number" min="1" step="0.5" value="${r.cesto}" data-cfg="cesto" aria-label="Cesto médio em euros" style="width:5.5em"> € e a margem média da loja (${Math.round(r.mg*100)} %): cerca de ${eur(r.porCliente)} de lucro por cliente.</p><button class="btn sm" data-act="relatorio" style="margin-top:12px">Relatório de ${esc(mesN)}</button></section>`;
 }
 function vRelatorio(){
   const r=resultados(),mesN=new Intl.DateTimeFormat('pt-PT',{month:'long',year:'numeric'}).format(new Date());
@@ -1353,18 +1414,18 @@ function vFolheto(){
   const cats=[...new Set(cs.map(x=>x.p.cat))];
   const inp='padding:8px 10px;border:1px solid var(--line-2);border-radius:10px;font:inherit;background:#fff';
   const g=F.gerado,pub=F.publicado;
-  return `<div class="ph"><div><h1>Folheto</h1><p>Aqui estão todos os produtos que pode pôr em promoção sem descer da margem mínima. Escolha os produtos e as datas e gere o folheto. Fica organizado por gama, com mais destaque para as melhores promoções e as maiores margens.</p></div><span class="chip c-blue">${nSel} escolhidos</span></div>
-  <section class="card pad"><div class="card-h"><h2>Datas do folheto</h2></div>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap" class="small"><span class="muted">De</span><input type="date" data-fol="ini" value="${F.ini}" style="${inp}"><span class="muted">a</span><input type="date" data-fol="fim" value="${F.fim}" min="${F.ini}" style="${inp}">
-    <button class="btn primary" data-act="gerar-folheto" style="margin-left:auto" ${nSel?'':'disabled'}>${IC.folheto.replace('<svg','<svg width="16" height="16"')}Gerar folheto</button></div></section>
+  return `<div class="ph"><div><h1>Publicar</h1><p>Escolha os produtos e as datas. O folheto organiza-se sozinho por gama.</p></div></div>
+  ${pubSeg()}
+  <section class="card pad"><div class="card-h" style="margin-bottom:10px"><h2>Datas do folheto</h2></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap" class="small"><span class="muted">De</span><input type="date" data-fol="ini" value="${F.ini}" style="${inp}"><span class="muted">a</span><input type="date" data-fol="fim" value="${F.fim}" min="${F.ini}" style="${inp}"></div></section>
   ${g?`<section class="card pad"><div class="card-h"><div><span class="label">Folheto gerado · ${g.itens.length} produtos</span><h2>Válido de ${dCurta(new Date(g.ini+'T00:00'))} a ${dCurta(new Date(g.fim+'T00:00'))}</h2></div><span class="xs muted">Deslize ou toque nos lados para virar a página</span></div>
     <div id="fb-prev" style="min-height:300px"></div>
     <div class="acts" style="margin-top:16px;justify-content:flex-start;flex-wrap:wrap;gap:8px">${pub?`<input readonly value="${esc(pub.link)}" style="${inp};flex:1;min-width:220px"><button class="btn sm" data-act="copiar-link-folheto">Copiar link</button><a class="btn sm green" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent('Folheto de promoções do '+S.store.name+' ('+dCurta(new Date(g.ini+'T00:00'))+' a '+dCurta(new Date(g.fim+'T00:00'))+'): '+pub.link)}">Partilhar no WhatsApp</a>`:`<button class="btn sm green" data-act="publicar-folheto">Criar link para as redes</button><span class="xs muted">O link abre o folheto para qualquer cliente e tem o botão «Receber no WhatsApp».</span>`}</div>
     ${tem('whatsapp')?'':`<p class="small muted" style="margin-top:12px">${S.store.canal?'Publique também o folheto no canal do WhatsApp da loja: é grátis e chega a todos os seguidores. O link do folheto mostra o botão «Seguir o canal».':'Dica: crie um canal do WhatsApp para a loja (grátis) e ponha o link em Configuração. Os clientes seguem o canal e veem o folheto todas as semanas.'} O envio automático para o telemóvel de cada cliente está no plano Completo.</p>`}
     ${tem('whatsapp')&&F.inscritos!=null?`<p class="small" style="margin-top:12px"><b>${F.inscritos}</b> ${F.inscritos===1?'cliente autorizou':'clientes autorizaram'} receber o folheto por WhatsApp.</p>`:''}</section>`:''}
   ${cats.map(c=>{const its=cs.filter(x=>x.p.cat===c);return `<section class="card pad"><div class="card-h"><h2>${esc(c)}</h2><button class="btn sm" data-act="fol-todos" data-id="${esc(c)}">${its.every(x=>F.sel[x.p.id])?'Tirar todos':'Escolher todos'}</button></div>
-    <div class="list">${its.map(x=>`<label class="item" style="cursor:pointer"><input type="checkbox" data-fol-sel="${x.p.id}" ${F.sel[x.p.id]?'checked':''} style="width:20px;height:20px;flex:none;accent-color:var(--blue)"><div style="width:40px;flex:none">${mini(x.p)}</div><div class="grow" style="min-width:0"><b>${esc(nomePost(x.p))}</b><div class="xs muted">${esc(x.p.size||'')} · margem ${pct(x.s.margin)}${topDeal.has(x.p.id)?' · <span style="color:var(--orange-ink);font-weight:600">melhor promoção</span>':''}${topMg.has(x.p.id)?' · <span style="color:var(--green-ink);font-weight:600">maior margem</span>':''}${x.s.maisCaro?' · <span style="color:var(--orange-ink);font-weight:600">aviso só para si: mais barato nas grandes cadeias</span>':''}${x.s.semPreco&&tem('concorrencia')?' · sem preço da concorrência':''}</div></div><b class="num">${eur(x.s.price)}</b></label>`).join('')}</div></section>`}).join('')}
-  ${cs.length?'':'<section class="card pad"><div class="empty">Ainda não há produtos com preço de promoção. Carregue uma fatura para a app calcular os preços.</div></section>'}`;
+    <div class="list">${its.map(x=>`<label class="frow"><input type="checkbox" data-fol-sel="${x.p.id}" ${F.sel[x.p.id]?'checked':''}>${mini(x.p)}<span style="min-width:0"><b>${esc(nomePost(x.p))}</b><small>${esc(x.p.size||'')} · margem ${pct(x.s.margin)}${topDeal.has(x.p.id)?' · <span style="color:var(--orange-ink);font-weight:600">melhor promoção</span>':''}${topMg.has(x.p.id)?' · <span style="color:var(--green-ink);font-weight:600">maior margem</span>':''}${x.s.maisCaro?' · <span style="color:var(--orange-ink);font-weight:600">aviso só para si: mais barato nas grandes cadeias</span>':''}${x.s.semPreco&&tem('concorrencia')?' · sem preço da concorrência':''}</small></span><span class="pr num">${eur(x.s.price)}</span></label>`).join('')}</div></section>`}).join('')}
+  ${cs.length?`<div class="barra"><span><b>${nSel}</b> ${nSel===1?'produto escolhido':'produtos escolhidos'}</span><button class="btn primary" data-act="gerar-folheto" ${nSel?'':'disabled'}>${IC.folheto.replace('<svg','<svg width="16" height="16"')}${g?'Gerar de novo':'Gerar folheto'}</button></div>`:'<section class="card pad"><div class="empty">Ainda não há produtos com preço de promoção. Carregue uma fatura para a app calcular os preços.</div></section>'}`;
 }
 async function contarInscritos(){
   if(!REAL.sb||!REAL.loja)return;
@@ -1391,6 +1452,7 @@ const ACT={
   next(){S.feat=S.feat+1;render()},
   pick(id,el){S.pick[id]=+el.dataset.idx;render()},
   'approve-feat'(id){const p=prod(id),s=suggest(p),i=S.pick[id]??0,sched=nextSlot();setPromo(id,{status:'approved',at:new Date().toISOString(),choice:i,sched});log(`Aprovou ${p.name} a ${eur(s.price)} (margem ${pct(s.margin)}) e escolheu "${STYLE_NAMES[i]}"`);render();toast(`Aprovada e agendada: ${whenTxt(sched)}`)},
+  'promo-tab'(id){S.promoTab=id;render()},
   approve(id){const p=prod(id),s=suggest(p);setPromo(id,{status:'approved',at:new Date().toISOString(),choice:null,sched:null});log(`Aprovou ${p.name} a ${eur(s.price)} (margem ${pct(s.margin)})`);render();toast('Aprovada. Escolha o design em Publicações.')},
   reject(id){const p=prod(id);setPromo(id,{status:'rejected',at:new Date().toISOString()});log(`Rejeitou a sugestão para ${p.name}`);render();toast('Sugestão rejeitada')},
   undo(id){const p=prod(id);delete S.promos[id];log(`Anulou a decisão sobre ${p.name}`);render();toast('Decisão anulada')},
