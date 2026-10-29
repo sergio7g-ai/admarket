@@ -35,6 +35,7 @@ function partir(linha) {
     .replace(/(\s\d{1,4}), (\d{2})(?=\s|$)/g, '$1,$2')                     // "15, 60" (OCR separou os cêntimos)
     .replace(/\s[Il|](cx|fd|emb)\b/gi, ' 1 $1')                       // "1 CX" lido "ICX"
     .replace(/(^|\s)[eE],(\d{2})(?=\s|$)/g, '$10,$2')                         // "0,00" lido "e,00"
+    .replace(/(\s\d{1,3}), ?[eEoO0](?=\s|$)/g, '$1,0')                         // "10,0" lido "10, e" (desconto)
     .replace(/(\s\d{1,4}) (\d{2})\s*$/, '$1,$2').trim().split(/\s+/)
     .map(x => /^[OQDo]{1,2}$/.test(x) ? '0' : /^[DOQ]\d{2,}$/.test(x) ? '0' + x.slice(1)
       : /^[\dOolI.,%]+$/.test(x) && /\d/.test(x) ? x.replace(/[Oo]/g, '0').replace(/[lI]/g, '1') : x); // erros típicos de OCR

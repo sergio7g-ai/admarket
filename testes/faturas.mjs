@@ -34,6 +34,9 @@ const casos = [
     '170012 5601234170016 DETERG. LOICA FAIRY 1L ICX 12 23,40 10,0 21,06 23',
     '140221 5601234140229 ARROZ CAROLINO CIGALA 1KG (OFERTA) UN 2 0,00 e,00'].join('\n'), null,
     [['ARROZ CAROLINO CIGALA 1KG', 52, 0.9423], ['DETERG. LOICA FAIRY 1L', 12, 1.755]]],
+  // 2.ª foto (29/10): desconto "10,0" lido "10, e"
+  ['Foto real 2 (desconto mal lido)', 'Ret. EAN Designação Emb Qtd Un/Emb P. Emb D1% D2% Líquido IVA\n170012 5601234170016 DETERG. LOICA FAIRY 1L CX 1 12 23,40 10, e 21,06 23', null,
+    [['DETERG. LOICA FAIRY 1L', 12, 1.755]]],
 ];
 const norm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 let falhas = 0;

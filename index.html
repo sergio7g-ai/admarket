@@ -563,18 +563,35 @@ const eurN=v=>v==null?'—':fmt.format(v);
 // O custo da fatura é sem IVA; a margem conta-se sobre o preço sem IVA.
 const IVA_CAT={Frescos:6,Mercearia:6,Bebidas:23,Higiene:23};
 function ivaPct(p){return p.iva!=null&&p.iva!==''?+p.iva:(IVA_CAT[p.cat]??23)}
-// unidades numa embalagem («emb. 30 x 25 cl» → 30; «pack 6 x 1,5 l» → 6)
-function packN(t){const m=String(t||'').match(/(\d+)\s*(?:x|×)\s*\d/i);return m?+m[1]:1}
-// quantas unidades da fatura leva cada embalagem que a loja vende (a cerveja mini não se vende à unidade)
-function venda(p){return Math.max(1,+p.venda||packN(p.qty||p.size))}
+// Embalagens: compara-se sempre a mesma quantidade (ml, g ou unidades).
+//  - unidade da fatura: o que diz a descrição da fatura («CERVEJA SUPER BOCK MINI 25CL» → 25 cl; «IOGURTE 4X110G» → o pack de 440 g)
+//  - produto confirmado: o que vendem as cadeias («emb. 30 x 25 cl» → 7,5 L)
+//  - a loja vende, por omissão, o mesmo que as cadeias: 7,5 L ÷ 25 cl = pack de 30 garrafas → custo = 30 × custo da garrafa
+//  - produtos a peso («peso variável») custam ao kg: o custo da embalagem é proporcional ao peso
+const ehPeso=p=>/peso vari|\/\s*kg\b|ao kg/i.test(p.desc||'');
+function medFat(p){return ehPeso(p)?{v:1000,d:'g'}:medida(p.desc||'')}
+function medProd(p){return medida(p.qty||p.size||'')}
+// quantas unidades da fatura leva a embalagem vendida (pode ser fração nos produtos a peso)
+function vendaAuto(p){const f=medFat(p),c=medProd(p);if(!f||!c||f.d!==c.d)return 1;const r=c.v/f.v;
+  if(ehPeso(p))return r;if(r>=1.5&&Math.abs(r-Math.round(r))/r<0.05)return Math.round(r);return 1}
+function venda(p){return +p.venda>0?+p.venda:vendaAuto(p)}
+// o tamanho do produto confirmado não bate com o da fatura (ex.: fatura de 12 rolos, produto de 9) → o dono tem de confirmar
+function tamDif(p){if(p.vendaOk||+p.venda>0)return false;const f=medFat(p),c=medProd(p);if(!f||!c)return false;if(f.d!==c.d)return true;
+  if(ehPeso(p))return false;const r=c.v/f.v;return Math.abs(r-1)>0.05&&!(r>=1.5&&Math.abs(r-Math.round(r))/r<0.05)}
+// o que aparece nas publicações e no folheto: «30 × 25 cl» em vez de «7,5 L»
+function tamVenda(p){const n=venda(p),f=medFat(p);if(!f||ehPeso(p)||n<=1)return tamanhoBonito(p.qty||p.size||'');
+  return n+' × '+tamanhoBonito(p.desc.match(/\d+(?:[.,]\d+)?\s*x\s*\d+(?:[.,]\d+)?\s*(kg|gr|g|ml|cl|lt|l)\b/i)?.[0]||tamanhoBonito(f.d==='un'?f.v+' un':f.v+(f.d==='g'?' g':' ml')))}
+// preço das cadeias (para o tamanho delas) → preço para a quantidade que a loja vende
+function fatorConc(p){const mf=medFat(p),mp=medProd(p);return mf&&mp&&mf.d===mp.d?venda(p)*mf.v/mp.v:1}
 const MARGEM_ESTRANHA=0.6;   // acima disto quase sempre é a embalagem errada (pack comparado com uma unidade)
 const pvp=v=>{let pr=r2(Math.ceil((v+0.0001)*10)/10-0.01);if(pr<v)pr=r2(pr+0.10);return pr};
 function suggest(p){
-  const m=S.margins[p.cat]/100,iva=ivaPct(p)/100,n=venda(p),cn=packN(p.qty||p.size),custo=p.cost*n;   // custo da embalagem vendida, sem IVA
+  const m=S.margins[p.cat]/100,iva=ivaPct(p)/100,n=venda(p),custo=p.cost*n;   // custo da embalagem vendida, sem IVA
   const min=custo/(1-m)*(1+iva);                       // preço mínimo com IVA que respeita a margem
-  const lr=lowComp(p).price,low=lr==null?null:r2(lr*n/cn);   // preço da concorrência (com IVA) para a mesma quantidade
+  // preço da concorrência (com IVA) ajustado à mesma quantidade que a loja vende
+  const lr=lowComp(p).price,low=lr==null?null:r2(lr*fatorConc(p));
   const mg=pr=>{const l=pr/(1+iva);return (l-custo)/l};
-  const fim=(price,o)=>{const margin=mg(price);return Object.assign({price,min,low,margin,minMargin:m,iva,n,custo,estranha:margin>MARGEM_ESTRANHA&&!p.vendaOk},o)};
+  const fim=(price,o)=>{const margin=mg(price);return Object.assign({price,min,low,margin,minMargin:m,iva,n,custo,estranha:(margin>MARGEM_ESTRANHA||tamDif(p))&&!p.vendaOk,tamDif:tamDif(p)},o)};
   // Essencial: o preço sai só da margem mínima; os preços da concorrência servem apenas para avisar o dono (nunca aparecem nas publicações)
   if(!tem('concorrencia')){const pr=pvp(min);return fim(pr,{beats:false,semPreco:low==null,maisCaro:low!=null&&low<pr,basico:true})}
   if(low==null)return fim(pvp(min),{beats:false,semPreco:true});   // ainda sem preço da concorrência
@@ -947,8 +964,8 @@ function vCompare(){
   if(!tem('concorrencia'))return `<div class="ph"><div><h1>Preços da concorrência</h1><p>Disponível nos planos Crescer e Completo.</p></div></div><section class="card pad"><div class="empty">No plano Crescer, a app compara cada produto com as grandes cadeias de hiper e supermercados e sugere o preço da promoção para ficar abaixo delas, sem descer da sua margem. No Essencial, a app só o avisa quando um produto está mais barato lá fora.</div></section>`;
   return `<div class="ph"><div><h1>Preços</h1><p>O seu custo ao lado das grandes superfícies, com o mínimo que respeita a margem e a promoção sugerida.</p></div></div>
   <section class="card"><div class="tw"><table><thead><tr><th>Produto</th><th>Custo s/ IVA</th><th>Continente</th><th>Pingo Doce</th><th>Auchan</th><th>Mínimo c/ IVA</th><th>Sugestão c/ IVA</th></tr></thead><tbody>
-  ${S.products.map(p=>{const s=suggest(p),lo=lowComp(p);return `<tr><td><div class="prod">${mini(p)}<div><b>${esc(p.name)}</b><span class="sub">${esc(p.size)} · ${p.cat}${p.real?' · preços reais':''}</span></div></div></td>
-    <td class="num">${eur(s.custo)}${s.n>1?`<span class="sub">${s.n} × ${eur(p.cost)}</span>`:''}</td>${(ci=>Object.keys(COMP).map(k=>`<td class="num ${k===lo.key?'low':''}">${eurN(ci.c[k])}${ci.src[k]?`<span class="sub">${ci.src[k]==='site'?'site':'folheto'}</span>`:''}</td>`).join(''))(compInfo(p))}
+  ${S.products.map(p=>{const s=suggest(p),lo=lowComp(p);return `<tr><td><div class="prod">${mini(p)}<div><b>${esc(p.name)}</b><span class="sub">${esc(p.size)} · ${p.cat}${p.real?' · preços reais':''}</span><details class="mais"><summary class="xs">Embalagem e IVA</summary>${embHTML(p)}</details></div></div></td>
+    <td class="num">${eur(s.custo)}${s.n>1?`<span class="sub">${s.n} × ${eur(p.cost)}</span>`:''}</td>${(ci=>{const fc=fatorConc(p),aj=Math.abs(fc-1)>0.001;return Object.keys(COMP).map(k=>`<td class="num ${k===lo.key?'low':''}">${ci.c[k]==null?'—':eur(r2(ci.c[k]*fc))}${aj&&ci.c[k]!=null?`<span class="sub">${esc(p.qty)}: ${eur(ci.c[k])}</span>`:''}${ci.src[k]?`<span class="sub">${ci.src[k]==='site'?'site':'folheto'}</span>`:''}</td>`).join('')})(compInfo(p))}
     <td class="num">${eur(s.min)}<span class="sub">${S.margins[p.cat]}% margem</span></td>
     <td class="num"><b>${eur(s.price)}</b><span class="sub" style="color:${s.beats?'var(--green-ink)':'var(--orange-ink)'}">${s.estranha?'confirme a embalagem':s.beats?pct(s.margin)+' margem':'acima da concorrência'}</span></td></tr>`}).join('')}
   </tbody></table></div></section>
@@ -971,14 +988,16 @@ function prow(x){
     <div class="ac">${ac}</div></div>`;
 }
 // quantas unidades leva a embalagem vendida e a taxa de IVA: mudam o custo, o preço com IVA e a margem
-function embHTML(p){const s=suggest(p);
+function embHTML(p){const s=suggest(p),f=medFat(p),un=f&&!ehPeso(p)?tamanhoBonito(f.d==='un'?f.v+' un':f.v+(f.d==='g'?' g':' ml')):'';
   return `<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-top:8px">
-    <div class="field" style="margin:0"><label for="vd-${p.id}" class="xs">Vende-se em embalagem de</label><input class="edit num" id="vd-${p.id}" type="number" min="1" step="1" inputmode="numeric" data-venda="${p.id}" value="${s.n}" style="width:80px"> <span class="xs muted">${s.n===1?'unidade':'unidades'}</span></div>
+    ${ehPeso(p)?`<p class="xs muted" style="margin:0">Produto a peso: custo ${eur(p.cost)}/kg × ${tamanhoBonito(p.qty||p.size)} = ${eur(s.custo)}.</p>`
+    :`<div class="field" style="margin:0"><label for="vd-${p.id}" class="xs">Vende-se em embalagem de</label><input class="edit num" id="vd-${p.id}" type="number" min="1" step="1" inputmode="numeric" data-venda="${p.id}" value="${Math.round(s.n)}" style="width:80px"> <span class="xs muted">${un?'× '+un:(s.n===1?'unidade':'unidades')}</span></div>`}
     <div class="field" style="margin:0"><label for="iv-${p.id}" class="xs">IVA</label><select class="edit" id="iv-${p.id}" data-iva="${p.id}">${[6,13,23].map(v=>`<option value="${v}" ${v===ivaPct(p)?'selected':''}>${v}%</option>`).join('')}</select></div></div>
-    <p class="xs muted" style="margin:6px 0 0">Custo por unidade ${eur(p.cost)} s/ IVA · preço da embalagem com IVA, como nas grandes cadeias.</p>`}
+    ${p.desc?`<p class="xs muted" style="margin:6px 0 0">Na fatura: «${esc(p.desc)}» a ${eur(p.cost)} s/ IVA${ehPeso(p)?'/kg':' cada'}. Nas grandes cadeias: ${esc(p.qty||'')}.</p>`:`<p class="xs muted" style="margin:6px 0 0">Custo por unidade ${eur(p.cost)} s/ IVA.</p>`}
+    <p class="xs muted" style="margin:2px 0 0">O preço é da embalagem, com IVA, e compara-se com as cadeias para a mesma quantidade.</p>`}
 function embConfirmarHTML(){
   const xs=S.products.map(p=>({p,s:suggest(p)})).filter(x=>x.s.estranha&&promo(x.p.id).status==='pending');if(!xs.length)return '';
-  return `<section class="card pad"><div class="card-h"><div><h2>Confirme a embalagem</h2><span class="xs muted">A margem deu fora do normal: quase sempre é um pack comparado com uma unidade. Fica fora das promoções até confirmar.</span></div><span class="chip c-warn">${xs.length}</span></div>
+  return `<section class="card pad"><div class="card-h"><div><h2>Confirme a embalagem</h2><span class="xs muted">A margem deu fora do normal ou o tamanho do produto não bate com a fatura. Diga quantas unidades leva a embalagem que vende. Fica fora das promoções até confirmar.</span></div><span class="chip c-warn">${xs.length}</span></div>
     ${xs.map(({p,s})=>`<div class="prow2" style="grid-template-columns:44px minmax(0,1fr)">${mini(p)}<div style="min-width:0"><h3>${esc(p.name)} <span class="xs muted" style="font-weight:500">${esc(p.size||'')}</span></h3>
       <p class="nums">Custo ${eur(s.custo)}${s.n>1?` (${s.n} un)`:''} s/ IVA → ${eur(s.price)} c/ IVA · margem <b style="color:var(--orange-ink)">${pct(s.margin)}</b></p>${embHTML(p)}
       <button class="btn sm" style="margin-top:8px" data-act="emb-ok" data-id="${p.id}">Está certo assim</button></div></div>`).join('')}</section>`}
@@ -1575,7 +1594,7 @@ document.addEventListener('change',e=>{
   if(t.dataset.per&&t.dataset.id){const v=t.value;if(v){const pe=periodo(prod(t.dataset.id)),pt={};if(t.dataset.per==='ini'){pt.ini=v;pt.fim=isoD(pe.fim)<v?v:isoD(pe.fim)}else{pt.ini=isoD(pe.ini);pt.fim=v<pt.ini?pt.ini:v}setPromo(t.dataset.id,pt);save();render()}return}
   if(t.dataset.nomePost!=null){S.nomesPost=S.nomesPost||{};const v=t.value.replace(/\s+/g,' ').trim();const pq=S.products.find(q=>q.name===t.dataset.nomePost)||{name:t.dataset.nomePost};if(v&&v!==nomeCurto(pq.name,marcaDe(pq)))S.nomesPost[t.dataset.nomePost]=v;else delete S.nomesPost[t.dataset.nomePost];save();render();return}
   if(t.dataset.cfg){S.store[t.dataset.cfg]=t.value;render();return}
-  if(t.dataset.venda){const p=prod(t.dataset.venda),v=parseInt(t.value);if(p&&v>0){p.venda=v;p.vendaOk=true;save();render();toast(`${p.name}: embalagem de ${v}`)}return}
+  if(t.dataset.venda){const p=prod(t.dataset.venda),v=parseInt(t.value);if(p&&v>0){p.venda=v;p.vendaOk=true;p.size=tamVenda(p);save();render();toast(`${p.name}: embalagem de ${v}`)}return}
   if(t.dataset.iva){const p=prod(t.dataset.iva);if(p){p.iva=+t.value;save();render();toast(`${p.name}: IVA ${t.value}%`)}return}
   if(t.dataset.margin){const v=Math.max(0,Math.min(80,parseInt(t.value)||0));S.margins[t.dataset.margin]=v;render();toast(`Margem de ${t.dataset.margin.toLowerCase()}: ${v}%`)}
 });
@@ -1611,10 +1630,19 @@ async function _afterLogin(){
   if(REAL.user){
     let {data:l}=await REAL.sb.from('lojas').select('id,nome').order('criado_em').limit(1);
     if(!l?.length){const {data:id}=await REAL.sb.rpc('criar_loja',{p_nome:S.store.name});l=[{id,nome:S.store.name}]}
-    REAL.loja=l[0];await loadFaturas();
+    REAL.loja=l[0];await loadFaturas();completarDesc();
     ensureFolhetos();ensurePrecos();fundosProdutos();   // folhetos, preços dos sites e fotos sem fundo assim que há sessão
   }
   if(S.tab==='invoices')render();
+}
+// produtos confirmados antes de a app guardar a descrição da fatura: vai buscá-la às linhas das faturas (mesma marca e mesmo custo)
+async function completarDesc(){
+  const ps=S.products.filter(p=>p.real&&!p.desc);if(!ps.length||!REAL.sb)return;
+  const {data}=await REAL.sb.from('linhas_fatura').select('descricao,custo_unit,iva_pct').eq('loja_id',REAL.loja.id).gt('custo_unit',0).limit(1000);
+  let mud=0;for(const p of ps){const b=norm(p.brand||'').split(/\s+/).filter(w=>w.length>2);
+    const l=(data||[]).find(l=>Math.abs(+l.custo_unit-p.cost)<0.0051&&b.some(w=>norm(l.descricao).includes(w.slice(0,5))));
+    if(l){p.desc=l.descricao;p.cost=+l.custo_unit;if(p.iva==null&&+l.iva_pct>0)p.iva=+l.iva_pct;p.size=tamVenda(p);mud++}}
+  if(mud){save();render()}
 }
 async function loadFaturas(){
   const {data}=await REAL.sb.from('faturas').select('id,numero,data,total,origem,metodo,tokens,estado,fornecedores(nif,nome),linhas_fatura(count)').order('criado_em',{ascending:false}).limit(20);
@@ -1780,9 +1808,9 @@ ACT['real-confirm']=async()=>{
     for(let i=0;i<ls.length;i++){
       const l=ls[i],custo=parseFloat(document.getElementById('rl-cost-'+i)?.value)||+l.custo_unit,c=escolhido(pe,i);
       if(!(custo>0))continue;
-      if(!c){const cs=pe.sug?.[i]?.candidatos||[];S.porConfirmar=S.porConfirmar.filter(x=>x.desc!==l.descricao);S.porConfirmar.push({desc:l.descricao,nif,custo:r2(custo),iva:+l.iva_pct||null,qtd:+l.quantidade,inv:pe.res.cabecalho?.numero||'fatura',candidatos:cs});continue}
+      if(!c){const cs=pe.sug?.[i]?.candidatos||[];S.porConfirmar=S.porConfirmar.filter(x=>x.desc!==l.descricao);S.porConfirmar.push({desc:l.descricao,nif,custo:Math.round(custo*10000)/10000,iva:+l.iva_pct||null,qtd:+l.quantidade,inv:pe.res.cabecalho?.numero||'fatura',candidatos:cs});continue}
       REAL.sb.rpc('confirmar_produto',{p_desc:descNorm(l.descricao),p_nif:nif,p_marca:c.marca||'',p_produto:c.produto,p_tamanho:c.tamanho||'',p_imagem:c.imagem||'',p_ok:true}).then(()=>{});
-      if(adicionarConfirmado(c,{custo,qtd:+l.quantidade,inv:pe.res.cabecalho?.numero||'fatura',iva:+l.iva_pct}))novos++;
+      if(adicionarConfirmado(c,{custo,qtd:+l.quantidade,inv:pe.res.cabecalho?.numero||'fatura',iva:+l.iva_pct,desc:l.descricao}))novos++;
       S.porConfirmar=S.porConfirmar.filter(x=>x.desc!==l.descricao);
     }
     const sem=S.porConfirmar;
@@ -1812,7 +1840,7 @@ async function ensureFolhetos(){
 function medida(t){
   t=norm(t).replace(/(\d),(\d)/g,'$1.$2');let m=t.match(/(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*(kg|gr|g|ml|cl|lt|l)\b/),n,u;
   if(m){n=m[1]*m[2];u=m[3]}else{m=t.match(/(\d+(?:\.\d+)?)\s*(kg|gr|g|ml|cl|lt|l|un|unid|doses|capsulas|rolos)\b/);if(!m)return null;n=+m[1];u=m[2]}
-  const f={kg:1000,gr:1,g:1,l:1000,lt:1000,cl:10,ml:1}[u];return f?{v:n*f,d:(u==='kg'||u==='g'||u==='gr')?'g':'ml'}:{v:n,d:u.startsWith('un')?'un':u}
+  const f={kg:1000,gr:1,g:1,l:1000,lt:1000,cl:10,ml:1}[u];return f?{v:n*f,d:(u==='kg'||u==='g'||u==='gr')?'g':'ml'}:{v:n,d:u.startsWith('un')||u==='rolos'?'un':u}
 }
 const QUALIF=['lactose','proteina','cacau','chocolate','bio','light','zero','descafeinado','soluvel','capsulas','grao','integral','acucar','spray','pack'],QUALIF_VAR=['magro','gordo'];
 function folhetoCombina(p,f){
@@ -1923,12 +1951,13 @@ const CAT_PAL={Frescos:['leite','iogurte','queijo','manteiga','fiambre','fruta',
 function categoria(t){t=norm(t);for(const c in CAT_PAL)if(CAT_PAL[c].some(w=>t.includes(w)))return c;return 'Mercearia'}
 function tamanhoBonito(t){const m=medida(t||'');if(!m)return String(t||'').replace(/^emb\.?\s*/i,'');if(m.d==='g')return m.v>=1000?String(m.v/1000).replace('.',',')+' kg':Math.round(m.v)+' g';if(m.d==='ml')return m.v>=1000?String(m.v/1000).replace('.',',')+' L':m.v%10===0?m.v/10+' cl':Math.round(m.v)+' ml';return m.v+' '+m.d}
 const LOJA_COMP={'continente':'continente','pingo doce':'pingo','auchan':'auchan'};
-function adicionarConfirmado(c,{custo,qtd,inv,iva}){
+function adicionarConfirmado(c,{custo,qtd,inv,iva,desc}){
   const marca=c.marca||'',nome=nomeCand(c),qty=tamanhoBonito(c.tamanho);
   const prodSem=String(c.produto||'').split(/\s+/).filter(w=>!norm(marca).split(' ').includes(norm(w))).join(' ')||c.produto;
   const id='p-'+norm(marca+' '+prodSem+' '+qty).replace(/[^a-z0-9]+/g,'-').slice(0,60);
   const comp={};const lk=LOJA_COMP[norm(c.loja)];if(lk&&c.preco>0)comp[lk]=+c.preco;   // preço visto ao procurar: serve já de referência
-  const ex=prod(id),item={id,name:titulo(nome),size:qty,prod:prodSem,qty,brand:marca,cat:categoria(nome),cost:Math.round(custo*10000)/10000,qty_:qtd||0,inv,...(iva>0?{iva:+iva}:{}),img:c.imagem||null,real:true,confirmado:true,comp:Object.assign({},ex?.comp||{},comp)};
+  const ex=prod(id),item={id,name:titulo(nome),size:qty,prod:prodSem,qty,brand:marca,cat:categoria(nome),cost:Math.round(custo*10000)/10000,qty_:qtd||0,inv,desc:desc||ex?.desc||'',venda:ex?.venda,vendaOk:ex?.vendaOk,...(iva>0?{iva:+iva}:{}),img:c.imagem||null,real:true,confirmado:true,comp:Object.assign({},ex?.comp||{},comp)};
+  item.size=tamVenda(item);
   if(ex){Object.assign(ex,item);return false}
   S.products.push(item);delete S.promos[id];return true;
 }
@@ -1940,9 +1969,11 @@ function porConfirmarHTML(){
 }
 ACT['emb-ok']=id=>{const p=prod(id);if(p){p.vendaOk=true;save();render();toast('Embalagem confirmada')}};
 ACT['pc-prod']=(id,el)=>{const b=el||document.activeElement,j=+b.dataset.j,k=+b.dataset.k,x=(S.porConfirmar||[])[j];if(!x)return;
-  if(k>=0){const c=x.candidatos[k];REAL.sb?.rpc('confirmar_produto',{p_desc:descNorm(x.desc),p_nif:x.nif||'',p_marca:c.marca||'',p_produto:c.produto,p_tamanho:c.tamanho||'',p_imagem:c.imagem||'',p_ok:true}).then(()=>{});adicionarConfirmado(c,{custo:x.custo,qtd:x.qtd,inv:x.inv,iva:x.iva});toast('Confirmado: '+titulo(nomeCand(c)))}
+  if(k>=0){const c=x.candidatos[k];REAL.sb?.rpc('confirmar_produto',{p_desc:descNorm(x.desc),p_nif:x.nif||'',p_marca:c.marca||'',p_produto:c.produto,p_tamanho:c.tamanho||'',p_imagem:c.imagem||'',p_ok:true}).then(()=>{});adicionarConfirmado(c,{custo:x.custo,qtd:x.qtd,inv:x.inv,iva:x.iva,desc:x.desc});toast('Confirmado: '+titulo(nomeCand(c)))}
   else toast('Fica fora das promoções: '+x.desc);
   S.porConfirmar.splice(j,1);render()};
+// produtos guardados antes: o tamanho mostrado passa a ser o da embalagem vendida («30 × 25 cl»)
+for(const p of S.products||[])if(p.desc)p.size=tamVenda(p);
 sbInit();
 if(S.pending&&S.pending.real&&S.pending.stage==='reading')S.pending=null;
 if(S.pending&&S.pending.stage==='reading')S.pending.stage='review';
